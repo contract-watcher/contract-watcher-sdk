@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Version>1.0.0</Version>
+        <Authors>a1unade</Authors>
+        <Company>ContractWatcher</Company>
+        <Copyright>Copyright © ContractWatcher</Copyright>
+        <Nullable>enable</Nullable>
+        <Description>.NET SDK for integrating applications with ContractWatcher.</Description>
+        <PackageTags>contractwatcher;sdk;dotnet;.net;api;integration;monitoring</PackageTags>
+        <PackageId>ContractWatcher.SDK</PackageId>
+        <RepositoryUrl>https://github.com/contract-watcher/contract-watcher-sdk</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/contract-watcher/contract-watcher-sdk</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    </PropertyGroup>
+
+</Project>
