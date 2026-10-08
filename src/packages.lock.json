@@ -1,6 +1,13 @@
 {
   "version": 1,
   "dependencies": {
-    "net10.0": {}
+    "net10.0": {
+      "ContractWatcher.Common": {
+        "type": "Direct",
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "WdEgQRP7tgYez+Jbmr/hCJN4+0Qc8PL5XXEzgJXvWMjtPhKgq4g2bu3vu/490ysEWd1gaWe+Q6g6CCf/lZXbJA=="
+      }
+    }
   }
 }
