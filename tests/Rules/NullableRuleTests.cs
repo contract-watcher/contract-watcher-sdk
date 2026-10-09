@@ -6,7 +6,7 @@ using ContractWatcher.SDK.Validation.Rules;
 
 namespace ContractWatcher.SDK.Tests.Rules;
 
-public class NullableRuleTests
+public sealed class NullableRuleTests
 {
     private readonly NullableRule _rule = new();
 
