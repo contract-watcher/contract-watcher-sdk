@@ -156,6 +156,7 @@ public sealed class ContractValidatorTests
     private static PublishedContract CreateContract(params ContractRule[] rules) =>
         new()
         {
+            Slug = "products",
             ContractVersion = 1,
             Rules = rules
         };
