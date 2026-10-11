@@ -34,4 +34,9 @@ public sealed class WatcherContext
     /// Итоговый статус выполнения сценария
     /// </summary>
     public WatcherStatus Status { get; set; } = WatcherStatus.Pending;
+    
+    /// <summary>
+    /// Cформированный отчет проверки
+    /// </summary>
+    public ValidationReport? Report { get; set; }
 }

@@ -44,6 +44,7 @@ public sealed class ExecutionPipelineBuilder
     {
         return 
             AddMiddleware<ContractResolutionMiddleware>()
-            .AddMiddleware<ValidationMiddleware>();
+            .AddMiddleware<ValidationMiddleware>()
+            .AddMiddleware<ReportMiddleware>();
     }
 }
