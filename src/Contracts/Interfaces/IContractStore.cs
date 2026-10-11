@@ -5,18 +5,14 @@ namespace ContractWatcher.SDK.Contracts.Interfaces;
 /// <summary>
 /// Представляет локальное хранилище опубликованных контрактов
 /// </summary>
-/// <remarks>
-/// Контракты идентифицируются по уникальному slug в рамках текущей интеграции
-/// </remarks>
+/// <remarks>Контракты идентифицируются по уникальному slug в рамках текущей интеграции</remarks>
 public interface IContractStore
 {
     /// <summary>
     /// Получает локально сохранённый контракт по его slug
     /// </summary>
     /// <param name="slug">Уникальное имя контракта в рамках интеграции</param>
-    /// <returns>
-    /// Сохранённый контракт либо null, если контракт с указанным slug отсутствует
-    /// </returns>
+    /// <returns>Возвращает сохранённый контракт либо null, если контракт с указанным slug отсутствует</returns>
     PublishedContract? Get(string slug);
 
     /// <summary>
@@ -33,9 +29,7 @@ public interface IContractStore
     /// Удаляет контракт из локального хранилища
     /// </summary>
     /// <param name="slug">Уникальное имя удаляемого контракта</param>
-    /// <returns>
-    /// Возвращает true, если контракт существовал и был удалён; false
-    /// </returns>
+    /// <returns>Возвращает true, если контракт существовал и был удалён; false</returns>
     bool Remove(string slug);
 
     /// <summary>
