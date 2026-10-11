@@ -6,12 +6,12 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace ContractWatcher.SDK.Execution.Extensions;
 
 /// <summary>
-/// Содержит методы регистрации execution pipeline приложения
+/// Содержит методы регистрации execution pipeline обработки контрактов
 /// </summary>
 public static class ExecutionServiceCollectionExtensions
 {
     /// <summary>
-    /// Добавляет execution pipeline приложения и стандартный набор middleware
+    /// Добавляет execution pipeline обработки контрактов и стандартный набор middleware
     /// </summary>
     /// <param name="services">Коллекция сервисов приложения</param>
     /// <param name="configure">Необязательная функция дополнительной настройки pipeline</param>

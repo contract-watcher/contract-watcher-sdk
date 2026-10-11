@@ -11,6 +11,9 @@ namespace ContractWatcher.SDK.Execution.Middlewares;
 /// </summary>
 public sealed class ContractResolutionMiddleware : IWatcherMiddleware
 {
+    /// <summary>
+    /// Провадер контрактов
+    /// </summary>
     private readonly IContractProvider _contractProvider;
 
     /// <summary>
@@ -33,10 +36,8 @@ public sealed class ContractResolutionMiddleware : IWatcherMiddleware
         if (contract is null)
         {
             context.Status = WatcherStatus.ContractUnavailable;
-
             return;
         }
-
         context.Contract = contract;
         
         await next(context, cancellationToken);

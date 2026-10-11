@@ -7,10 +7,13 @@ using ContractWatcher.SDK.Validation.Interfaces;
 namespace ContractWatcher.SDK.Execution.Middlewares;
 
 /// <summary>
-/// Выполняет локальную проверку JSON по разрешённому контракту
+/// Выполняет локальную проверку JSON по полученному контракту контракту
 /// </summary>
 public sealed class ValidationMiddleware : IWatcherMiddleware
 {
+    /// <summary>
+    /// Валидатор контрактов
+    /// </summary>
     private readonly IContractValidator _validator;
 
     /// <summary>
@@ -30,7 +33,6 @@ public sealed class ValidationMiddleware : IWatcherMiddleware
 
         var contract = 
             context.Contract ?? throw new InvalidOperationException("Contract must be resolved before validation.");
-
         var result = _validator.Validate(context.Payload, contract);
 
         context.ValidationResult = result;

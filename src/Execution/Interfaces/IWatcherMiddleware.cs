@@ -4,7 +4,7 @@ using ContractWatcher.SDK.Execution.Models;
 namespace ContractWatcher.SDK.Execution.Interfaces;
 
 /// <summary>
-/// Представляет отдельный этап pipeline выполнения
+/// Представляет отдельный этап pipeline выполнения обработки контрактов
 /// </summary>
 public interface IWatcherMiddleware
 {

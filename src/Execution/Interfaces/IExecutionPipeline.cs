@@ -3,7 +3,7 @@ using ContractWatcher.SDK.Execution.Models;
 namespace ContractWatcher.SDK.Execution.Interfaces;
 
 /// <summary>
-/// Представляет pipeline выполнения сценария приложения
+/// Pipeline выполнения сценария обработки контрактов
 /// </summary>
 public interface IExecutionPipeline
 {

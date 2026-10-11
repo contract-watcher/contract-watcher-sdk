@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace ContractWatcher.SDK.Execution.Builders;
 
 /// <summary>
-/// Предоставляет API для настройки execution pipeline приложения
+/// Предоставляет API для настройки execution pipeline обработки контрактов
 /// </summary>
 public sealed class ExecutionPipelineBuilder
 {

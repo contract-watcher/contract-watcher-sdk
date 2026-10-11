@@ -8,18 +8,14 @@ namespace ContractWatcher.SDK.Validation.Rules;
 /// <summary>
 /// Проверяет наличие обязательного поля во входящем JSON
 /// </summary>
-/// <remarks>
-/// Правило применяется только к полям, помеченным как обязательные
-/// </remarks>
+/// <remarks>Правило применяется только к полям, помеченным как обязательные</remarks>
 public class RequiredRule : IValidationRule
 {
     /// <summary>
     /// Определяет, необходимо ли применять проверку обязательности к указанному полю
     /// </summary>
     /// <param name="context">Контекст проверки поля</param>
-    /// <returns>
-    /// Возвращает true, если поле является обязательным; иначе false/>
-    /// </returns>
+    /// <returns>Возвращает true, если поле является обязательным; иначе false</returns>
     public bool CanValidate(ValidationContext context) => context.Rule.Required;
 
     /// <summary>
@@ -27,7 +23,7 @@ public class RequiredRule : IValidationRule
     /// </summary>
     /// <param name="context">Контекст проверки поля</param>
     /// <returns>
-    /// Нарушение <see cref="ViolationType.RequiredFieldMissing"/>, если обязательное поле отсутствует; иначе <see langword="null"/>
+    /// Возвращает нарушение <see cref="ViolationType.RequiredFieldMissing"/>, если обязательное поле отсутствует; иначе <see langword="null"/>
     /// </returns>
     public ValidationViolation? Validate(ValidationContext context)
     {
