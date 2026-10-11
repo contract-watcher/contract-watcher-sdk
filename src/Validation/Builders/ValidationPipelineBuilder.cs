@@ -10,6 +10,9 @@ namespace ContractWatcher.SDK.Validation.Builders;
 /// </summary>
 public sealed class ValidationPipelineBuilder
 {
+    /// <summary>
+    /// Коллекция сервисов приложения
+    /// </summary>
     private readonly IServiceCollection _services;
 
     public ValidationPipelineBuilder(IServiceCollection services) =>
@@ -18,8 +21,7 @@ public sealed class ValidationPipelineBuilder
     /// <summary>
     /// Добавляет правило проверки в конец конвейера
     /// </summary>
-    /// <typeparam name="TRule"> Тип добавляемого правила
-    /// </typeparam>
+    /// <typeparam name="TRule">Тип добавляемого правила</typeparam>
     /// <returns>Текущий экземпляр builder</returns>
     public ValidationPipelineBuilder AddRule<TRule>() where TRule : class, IValidationRule
     {
@@ -31,9 +33,7 @@ public sealed class ValidationPipelineBuilder
     /// <summary>
     /// Удаляет все зарегистрированные правила проверки
     /// </summary>
-    /// <remarks>
-    /// После вызова метода стандартные правила ContractWatcher также будут удалены
-    /// </remarks>
+    /// <remarks>После вызова метода стандартные правила ContractWatcher также будут удалены</remarks>
     /// <returns>Текущий экземпляр builder</returns>
     public ValidationPipelineBuilder ClearRules()
     {
@@ -52,7 +52,8 @@ public sealed class ValidationPipelineBuilder
     /// <returns>Текущий экземпляр builder</returns>
     public ValidationPipelineBuilder UseDefaultRules()
     {
-        return AddRule<RequiredRule>()
+        return 
+            AddRule<RequiredRule>()
             .AddRule<NullableRule>()
             .AddRule<TypeRule>();
     }

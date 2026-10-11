@@ -19,18 +19,14 @@ public class NullableRule : IValidationRule
     /// Определяет, применима ли проверка допустимости null к указанному полю
     /// </summary>
     /// <param name="context">Контекст проверки поля</param>
-    /// <returns>
-    /// Возвращает true, если поле присутствует во входящем JSON; иначе false
-    /// </returns>
+    /// <returns>Возвращает true, если поле присутствует во входящем JSON; иначе false</returns>
     public bool CanValidate(ValidationContext context) => context.Value is not null;
 
     /// <summary>
     /// Проверяет допустимость значения null для поля
     /// </summary>
     /// <param name="context">Контекст проверки поля</param>
-    /// <returns>
-    /// Возвращает <see cref="ViolationType.NullNotAllowed"/>, если поле содержит null, но контракт запрещает его; иначе null
-    /// </returns>
+    /// <returns>Возвращает <see cref="ViolationType.NullNotAllowed"/>, если поле содержит null, но контракт запрещает его; иначе null</returns>
     public ValidationViolation? Validate(ValidationContext context)
     {
         if (context.Value?.ValueKind != JsonValueKind.Null)

@@ -9,6 +9,9 @@ namespace ContractWatcher.SDK.Contracts.Stores;
 /// </summary>
 public sealed class InMemoryContractStore : IContractStore
 {
+    /// <summary>
+    /// Опубликованные контракты
+    /// </summary>
     private readonly ConcurrentDictionary<string, PublishedContract> _contracts = new(StringComparer.Ordinal);
 
     public PublishedContract? Get(string slug)

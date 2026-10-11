@@ -15,7 +15,7 @@ public sealed class ContractValidator : IContractValidator
     /// <summary>
     /// Инициализирует новый экземпляр валидатора контракта
     /// </summary>
-    /// <param name="pipeline"> Конвейер правил проверки отдельных полей </param>
+    /// <param name="pipeline">Конвейер правил проверки отдельных полей</param>
     public ContractValidator(IValidationPipeline pipeline) =>
         _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
     

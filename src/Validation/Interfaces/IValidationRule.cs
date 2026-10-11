@@ -12,17 +12,13 @@ public interface IValidationRule
     /// Определяет, применимо ли правило к указанному контексту
     /// </summary>
     /// <param name="context">Контекст проверки поля</param>
-    /// <returns>
-    /// Возвращает true, если правило должно быть выполнено; иначе false
-    /// </returns>
+    /// <returns>Возвращает true, если правило должно быть выполнено; иначе false</returns>
     bool CanValidate(ValidationContext context);
 
     /// <summary>
     /// Выполняет проверку поля
     /// </summary>
     /// <param name="context">Контекст проверки поля</param>
-    /// <returns>
-    /// Найденное нарушение либо null, если правило не нарушено
-    /// </returns>
+    /// <returns>Найденное нарушение либо null, если правило не нарушено</returns>
     ValidationViolation? Validate(ValidationContext context);
 }

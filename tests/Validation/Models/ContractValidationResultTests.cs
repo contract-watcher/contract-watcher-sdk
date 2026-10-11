@@ -2,7 +2,7 @@ using ContractWatcher.Common.Contracts;
 using ContractWatcher.Common.Enums;
 using ContractWatcher.SDK.Validation.Models;
 
-namespace ContractWatcher.SDK.Tests.Validation;
+namespace ContractWatcher.SDK.Tests.Validation.Models;
 
 public sealed class ContractValidationResultTests
 {

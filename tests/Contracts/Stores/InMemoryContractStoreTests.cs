@@ -2,7 +2,7 @@ using ContractWatcher.Common.Contracts;
 using ContractWatcher.Common.Enums;
 using ContractWatcher.SDK.Contracts.Stores;
 
-namespace ContractWatcher.SDK.Tests.Stores;
+namespace ContractWatcher.SDK.Tests.Contracts.Stores;
 
 public sealed class InMemoryContractStoreTests
 {

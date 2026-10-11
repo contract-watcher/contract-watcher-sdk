@@ -9,27 +9,21 @@ namespace ContractWatcher.SDK.Validation.Rules;
 /// <summary>
 /// Проверяет соответствие типа значения поля типу, указанному в контракте
 /// </summary>
-/// <remarks>
-/// Правило применяется только к существующим полям, значение которых не равно null
-/// </remarks>
+/// <remarks>Правило применяется только к существующим полям, значение которых не равно null</remarks>
 public class TypeRule : IValidationRule
 {
     /// <summary>
     /// Определяет, применима ли проверка типа к указанному полю
     /// </summary>
     /// <param name="context">Контекст проверки поля</param>
-    /// <returns>
-    /// Возвращает true, если поле существует и его значение не равно null; иначе false
-    /// </returns>
+    /// <returns>Возвращает true, если поле существует и его значение не равно null; иначе false</returns>
     public bool CanValidate(ValidationContext context) => context.Value is { ValueKind: not JsonValueKind.Null };
 
     /// <summary>
     /// Проверяет соответствие фактического JSON-типа ожидаемому типу контракта
     /// </summary>
     /// <param name="context">Контекст проверки поля</param>
-    /// <returns>
-    /// Возвращает <see cref="ViolationType.TypeMismatch"/>, если типы не совпадают; иначе null
-    /// </returns>
+    /// <returns>Возвращает <see cref="ViolationType.TypeMismatch"/>, если типы не совпадают; иначе null</returns>
     public ValidationViolation? Validate(ValidationContext context)
     {
         var valueKind = context.Value!.Value.ValueKind;
@@ -75,5 +69,4 @@ public class TypeRule : IValidationRule
 
             _ => throw new ArgumentOutOfRangeException(nameof(valueKind), valueKind, "Неподдерживаемый JSON-тип")
         };
-    
 }
