@@ -30,6 +30,7 @@ public sealed class ContractValidatorTests
         var validator = new ContractValidator(pipeline);
 
         // Act
+        // ReSharper disable once AccessToDisposedClosure
         var action = () => validator.Validate(document.RootElement, null!);
 
         // Assert
@@ -46,6 +47,7 @@ public sealed class ContractValidatorTests
         var contract = CreateContract();
 
         // Act
+        // ReSharper disable once AccessToDisposedClosure
         var action = () => validator.Validate(document.RootElement, contract);
 
         // Assert
@@ -116,7 +118,7 @@ public sealed class ContractValidatorTests
         var pipeline = new FakeValidationPipeline();
         var validator = new ContractValidator(pipeline);
         var contract = CreateContract(
-            CreateRule("customer_id", ContractFieldType.String),
+            CreateRule("customer_id"), // string - дефолтное значение
             CreateRule("amount", ContractFieldType.Number));
 
         // Act

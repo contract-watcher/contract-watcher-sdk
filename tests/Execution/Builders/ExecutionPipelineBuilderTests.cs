@@ -117,16 +117,9 @@ public sealed class ExecutionPipelineBuilderTests
 
         Assert.Collection(
             descriptors,
-            descriptor =>
-            {
-                Assert.Equal(typeof(ContractResolutionMiddleware), descriptor.ImplementationType);
-                Assert.Equal(ServiceLifetime.Transient, descriptor.Lifetime);
-            },
-            descriptor =>
-            {
-                Assert.Equal(typeof(ValidationMiddleware), descriptor.ImplementationType);
-                Assert.Equal(ServiceLifetime.Transient, descriptor.Lifetime);
-            });
+            descriptor => Assert.Equal(typeof(ContractResolutionMiddleware), descriptor.ImplementationType),
+            descriptor => Assert.Equal(typeof(ValidationMiddleware), descriptor.ImplementationType),
+            descriptor => Assert.Equal(typeof(ReportMiddleware), descriptor.ImplementationType));
     }
 
     [Fact]

@@ -4,7 +4,7 @@ using ContractWatcher.Common.Enums;
 using ContractWatcher.SDK.Validation.Models;
 using ContractWatcher.SDK.Validation.Rules;
 
-namespace ContractWatcher.SDK.Tests.Rules;
+namespace ContractWatcher.SDK.Tests.Validation.Rules;
 
 public sealed class RequiredRuleTests
 {

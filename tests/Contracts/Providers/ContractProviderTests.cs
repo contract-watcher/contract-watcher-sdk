@@ -75,6 +75,7 @@ public sealed class ContractProviderTests
         cancellationTokenSource.Cancel();
 
         // Act
+        // ReSharper disable once AccessToDisposedClosure
         var action = () => provider.GetAsync("products", cancellationTokenSource.Token);
 
         // Assert

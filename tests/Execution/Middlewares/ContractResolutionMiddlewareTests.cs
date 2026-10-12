@@ -142,6 +142,7 @@ public sealed class ContractResolutionMiddlewareTests
         var provider = new Mock<IContractProvider>();
         using var cancellationTokenSource = new CancellationTokenSource();
         
+        // ReSharper disable once AccessToDisposedClosure
         provider
             .Setup(x => x.GetAsync("products", cancellationTokenSource.Token))
             .ReturnsAsync(contract);
@@ -155,6 +156,7 @@ public sealed class ContractResolutionMiddlewareTests
         await middleware.InvokeAsync(context, next, cancellationTokenSource.Token);
 
         // Assert
+        // ReSharper disable once AccessToDisposedClosure
         provider.Verify(x => x.GetAsync("products", cancellationTokenSource.Token), Times.Once);
     }
 
