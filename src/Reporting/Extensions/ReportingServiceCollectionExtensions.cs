@@ -24,6 +24,7 @@ public static class ReportingServiceCollectionExtensions
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddEnumerable(ServiceDescriptor.Transient<IReportBuildHandler, ReportMetadataHandler>());
         services.TryAddEnumerable(ServiceDescriptor.Transient<IReportBuildHandler, ReportStatusHandler>());
+        services.TryAddEnumerable(ServiceDescriptor.Transient<IReportBuildHandler, ReportViolationsHandler>());
         services.TryAddTransient<IValidationReportBuilder, ValidationReportBuilder>();
 
         return services;
