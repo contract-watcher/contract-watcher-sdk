@@ -52,7 +52,8 @@ public sealed class ReportingServiceCollectionExtensionsTests
         Assert.Collection(
             descriptors,
             descriptor => Assert.Equal(typeof(ReportMetadataHandler), descriptor.ImplementationType),
-            descriptor => Assert.Equal(typeof(ReportStatusHandler), descriptor.ImplementationType));
+            descriptor => Assert.Equal(typeof(ReportStatusHandler), descriptor.ImplementationType),
+            descriptor => Assert.Equal(typeof(ReportViolationsHandler), descriptor.ImplementationType));
     }
 
     [Fact]
@@ -103,7 +104,7 @@ public sealed class ReportingServiceCollectionExtensionsTests
             .Where(service => service.ServiceType == typeof(IValidationReportBuilder))
             .ToArray();
 
-        Assert.Equal(2, handlers.Length);
+        Assert.Equal(3, handlers.Length);
         Assert.Single(builders);
     }
 }
