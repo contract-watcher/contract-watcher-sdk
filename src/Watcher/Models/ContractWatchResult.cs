@@ -6,7 +6,7 @@ namespace ContractWatcher.SDK.Watcher.Models;
 /// <summary>
 /// Локальный результат выполнения проверки
 /// </summary>
-public sealed class ContractWatchResult
+public class ContractWatchResult
 {
     /// <summary>
     /// Итоговый статус выполнения проверки
