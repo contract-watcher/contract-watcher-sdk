@@ -1,9 +1,9 @@
-using ContractWatcher.Common.Contracts;
 using ContractWatcher.SDK.Reporting.Delegates;
 using ContractWatcher.SDK.Reporting.Handlers;
-using ContractWatcher.SDK.Reporting.Models;
 using ContractWatcher.SDK.Tests.Fakes;
-using ContractWatcher.SDK.Validation.Models;
+
+// Fixtures
+using static ContractWatcher.SDK.Tests.Fixtures.ReportingFixture;
 
 namespace ContractWatcher.SDK.Tests.Reporting.Handlers;
 
@@ -24,7 +24,7 @@ public sealed class ReportMetadataHandlerTests
     {
         // Arrange
         var handler = new ReportMetadataHandler(TimeProvider.System);
-        var context = CreateContext();
+        var context = CreateReportBuildContext();
 
         ReportBuildDelegate next = _ => { };
 
@@ -42,7 +42,7 @@ public sealed class ReportMetadataHandlerTests
         var timestamp = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var timeProvider = new FakeTimeProvider(timestamp);
         var handler = new ReportMetadataHandler(timeProvider);
-        var context = CreateContext();
+        var context = CreateReportBuildContext();
 
         ReportBuildDelegate next = _ => { };
 
@@ -58,7 +58,7 @@ public sealed class ReportMetadataHandlerTests
     {
         // Arrange
         var handler = new ReportMetadataHandler(TimeProvider.System);
-        var context = CreateContext();
+        var context = CreateReportBuildContext();
         var nextCalled = false;
 
         ReportBuildDelegate next = _ => { nextCalled = true; };
@@ -90,7 +90,7 @@ public sealed class ReportMetadataHandlerTests
     {
         // Arrange
         var handler = new ReportMetadataHandler(TimeProvider.System);
-        var context = CreateContext();
+        var context = CreateReportBuildContext();
 
         // Act
         var action = () => handler.Handle(context, null!);
@@ -98,19 +98,4 @@ public sealed class ReportMetadataHandlerTests
         // Assert
         Assert.Throws<ArgumentNullException>(action);
     }
-
-    private static ReportBuildContext CreateContext() =>
-        new()
-        {
-            Contract = new PublishedContract
-            {
-                Slug = "products",
-                ContractVersion = 1,
-                Rules = []
-            },
-            ValidationResult = new ContractValidationResult
-            {
-                Violations = []
-            }
-        };
 }

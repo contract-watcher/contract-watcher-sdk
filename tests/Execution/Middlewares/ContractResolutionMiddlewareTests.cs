@@ -3,8 +3,11 @@ using ContractWatcher.SDK.Contracts.Interfaces;
 using ContractWatcher.SDK.Execution.Delegates;
 using ContractWatcher.SDK.Execution.Enums;
 using ContractWatcher.SDK.Execution.Middlewares;
-using ContractWatcher.SDK.Execution.Models;
 using Moq;
+
+// Fixtures
+using static ContractWatcher.SDK.Tests.Fixtures.ContractFixture;
+using static ContractWatcher.SDK.Tests.Fixtures.ExecutionFixture;
 
 namespace ContractWatcher.SDK.Tests.Execution.Middlewares;
 
@@ -190,19 +193,4 @@ public sealed class ContractResolutionMiddlewareTests
         // Assert
         await Assert.ThrowsAsync<ArgumentNullException>(action);
     }
-
-    private static WatcherContext CreateContext() =>
-        new()
-        {
-            ContractSlug = "products",
-            Payload = default
-        };
-
-    private static PublishedContract CreateContract() =>
-        new()
-        {
-            Slug = "products",
-            ContractVersion = 1,
-            Rules = []
-        };
 }

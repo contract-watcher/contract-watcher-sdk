@@ -2,7 +2,9 @@ using ContractWatcher.Common.Contracts;
 using ContractWatcher.Common.Enums;
 using ContractWatcher.SDK.Reporting.Delegates;
 using ContractWatcher.SDK.Reporting.Handlers;
-using ContractWatcher.SDK.Reporting.Models;
+
+// Fixtures
+using static ContractWatcher.SDK.Tests.Fixtures.ReportingFixture;
 
 namespace ContractWatcher.SDK.Tests.Reporting.Handlers;
 
@@ -28,7 +30,7 @@ public sealed class ReportViolationsHandlerTests
     {
         // Arrange
         var handler = new ReportViolationsHandler();
-        var context = CreateContext();
+        var context = CreateReportBuildContext();
 
         // Act
         var action = () => handler.Handle(context, null!);
@@ -47,7 +49,7 @@ public sealed class ReportViolationsHandlerTests
             Type = ViolationType.RequiredFieldMissing
         };
 
-        var context = CreateContext([violation]);
+        var context = CreateReportBuildContext([violation]);
         var handler = new ReportViolationsHandler();
 
         ReportBuildDelegate next = _ => { };
@@ -77,7 +79,7 @@ public sealed class ReportViolationsHandlerTests
             }
         };
 
-        var context = CreateContext(violations);
+        var context = CreateReportBuildContext(violations);
         var handler = new ReportViolationsHandler();
 
         ReportBuildDelegate next = _ => { };
@@ -93,7 +95,7 @@ public sealed class ReportViolationsHandlerTests
     public void Handle_CallsNext()
     {
         // Arrange
-        var context = CreateContext();
+        var context = CreateReportBuildContext();
         var handler = new ReportViolationsHandler();
         var nextCalled = false;
 
@@ -105,16 +107,4 @@ public sealed class ReportViolationsHandlerTests
         // Assert
         Assert.True(nextCalled);
     }
-
-    private static ReportBuildContext CreateContext(IReadOnlyCollection<ValidationViolation>? violations = null) =>
-        new()
-        {
-            Contract = new PublishedContract
-            {
-                Slug = "products",
-                ContractVersion = 1,
-                Rules = []
-            },
-            ValidationResult = new() { Violations = violations ?? [] }
-        };
 }

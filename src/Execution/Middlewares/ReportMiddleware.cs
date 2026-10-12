@@ -29,10 +29,10 @@ public sealed class ReportMiddleware : IWatcherMiddleware
             throw new ArgumentNullException(nameof(next));
 
         var contract = context.Contract ?? throw new InvalidOperationException(
-            "Контакт должен быть получен перед формированием отчета.");
+            "Contract must be resolved before report generation.");
 
         var validationResult = context.ValidationResult ?? throw new InvalidOperationException(
-            "Результат валидации должен быть получен перед формированием отчета.");
+            "Validation result must be available before report generation.");
 
         context.Report = _reportBuilder.Build(contract, validationResult);
 

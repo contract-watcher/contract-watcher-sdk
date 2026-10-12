@@ -3,6 +3,9 @@ using ContractWatcher.SDK.Contracts.Interfaces;
 using ContractWatcher.SDK.Contracts.Providers;
 using Moq;
 
+// Fixtures
+using static ContractWatcher.SDK.Tests.Fixtures.ContractFixture;
+
 namespace ContractWatcher.SDK.Tests.Contracts.Providers;
 
 public sealed class ContractProviderTests
@@ -81,12 +84,4 @@ public sealed class ContractProviderTests
         // Assert
         await Assert.ThrowsAnyAsync<OperationCanceledException>(action);
     }
-
-    private static PublishedContract CreateContract() =>
-        new()
-        {
-            Slug = "products",
-            ContractVersion = 1,
-            Rules = []
-        };
 }

@@ -1,6 +1,7 @@
-using ContractWatcher.Common.Contracts;
-using ContractWatcher.Common.Enums;
 using ContractWatcher.SDK.Contracts.Stores;
+
+// Fixtures
+using static ContractWatcher.SDK.Tests.Fixtures.ContractFixture;
 
 namespace ContractWatcher.SDK.Tests.Contracts.Stores;
 
@@ -188,21 +189,4 @@ public sealed class InMemoryContractStoreTests
         // Assert
         Assert.Throws<ArgumentException>(action);
     }
-
-    private static PublishedContract CreateContract(string slug, int version) =>
-        new()
-        {
-            Slug = slug,
-            ContractVersion = version,
-            Rules =
-            [
-                new ContractRule
-                {
-                    FieldName = "id",
-                    Type = ContractFieldType.String,
-                    Required = true,
-                    Nullable = false
-                }
-            ]
-        };
 }

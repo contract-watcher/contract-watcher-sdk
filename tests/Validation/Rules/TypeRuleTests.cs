@@ -1,8 +1,9 @@
 using System.Text.Json;
-using ContractWatcher.Common.Contracts;
 using ContractWatcher.Common.Enums;
-using ContractWatcher.SDK.Validation.Models;
 using ContractWatcher.SDK.Validation.Rules;
+
+// Fixtures
+using static ContractWatcher.SDK.Tests.Fixtures.ValidationFixture;
 
 namespace ContractWatcher.SDK.Tests.Validation.Rules;
 
@@ -14,7 +15,7 @@ public sealed class TypeRuleTests
     public void CanValidate_WhenFieldIsMissing_ReturnsFalse()
     {
         // Arrange
-        var context = CreateContext(ContractFieldType.String, value: null);
+        var context = CreateValidationContext(null, type: ContractFieldType.String);
 
         // Act
         var result = _rule.CanValidate(context);
@@ -28,7 +29,7 @@ public sealed class TypeRuleTests
     {
         // Arrange
         using var document = JsonDocument.Parse("null");
-        var context = CreateContext(ContractFieldType.String, document.RootElement);
+        var context = CreateValidationContext(document.RootElement, type: ContractFieldType.String);
 
         // Act
         var result = _rule.CanValidate(context);
@@ -49,7 +50,7 @@ public sealed class TypeRuleTests
     {
         // Arrange
         using var document = JsonDocument.Parse(json);
-        var context = CreateContext(expectedType, document.RootElement);
+        var context = CreateValidationContext(document.RootElement, type: expectedType);
 
         // Act
         var result = _rule.Validate(context);
@@ -68,7 +69,7 @@ public sealed class TypeRuleTests
     {
         // Arrange
         using var document = JsonDocument.Parse(json);
-        var context = CreateContext(expectedType, document.RootElement);
+        var context = CreateValidationContext(document.RootElement, type: expectedType);
 
         // Act
         var result = _rule.Validate(context);
@@ -86,7 +87,7 @@ public sealed class TypeRuleTests
     {
         // Arrange
         using var document = JsonDocument.Parse(""" "value" """);
-        var context = CreateContext((ContractFieldType)999, document.RootElement);
+        var context = CreateValidationContext(document.RootElement, type: (ContractFieldType)999);
 
         // Act
         var result = _rule.Validate(context);
@@ -103,7 +104,7 @@ public sealed class TypeRuleTests
     {
         // Arrange
         using var document = JsonDocument.Parse(json);
-        var context = CreateContext(ContractFieldType.String, document.RootElement);
+        var context = CreateValidationContext(document.RootElement, type: ContractFieldType.String);
 
         // Act
         var result = _rule.Validate(context);
@@ -117,24 +118,9 @@ public sealed class TypeRuleTests
     public void Validate_WhenJsonValueKindIsUnsupported_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        var context = CreateContext(ContractFieldType.String, default(JsonElement));
+        var context = CreateValidationContext(default(JsonElement), type: ContractFieldType.String);
 
         // Assert
         Assert.Throws<ArgumentOutOfRangeException>(() => _rule.Validate(context));
-    }
-
-    private static ValidationContext CreateContext(ContractFieldType type, JsonElement? value)
-    {
-        return new ValidationContext
-        {
-            Rule = new ContractRule
-            {
-                FieldName = "customer_id",
-                Type = type,
-                Required = true,
-                Nullable = false
-            },
-            Value = value
-        };
     }
 }

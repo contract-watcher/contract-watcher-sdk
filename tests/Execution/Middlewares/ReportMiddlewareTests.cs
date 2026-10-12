@@ -1,10 +1,15 @@
 using ContractWatcher.Common.Contracts;
-using ContractWatcher.Common.Enums;
 using ContractWatcher.SDK.Execution.Delegates;
 using ContractWatcher.SDK.Execution.Middlewares;
 using ContractWatcher.SDK.Execution.Models;
 using ContractWatcher.SDK.Tests.Fakes;
 using ContractWatcher.SDK.Validation.Models;
+
+// Fixtures
+using static ContractWatcher.SDK.Tests.Fixtures.ContractFixture;
+using static ContractWatcher.SDK.Tests.Fixtures.ExecutionFixture;
+using static ContractWatcher.SDK.Tests.Fixtures.ReportingFixture;
+using static ContractWatcher.SDK.Tests.Fixtures.ValidationFixture;
 
 namespace ContractWatcher.SDK.Tests.Execution.Middlewares;
 
@@ -104,7 +109,7 @@ public sealed class ReportMiddlewareTests
         var report = CreateReport();
         var builder = new FakeValidationReportBuilder { Result = report };
         var middleware = new ReportMiddleware(builder);
-        var context = CreateContext();
+        var context = CreateValidatedContext();
 
         WatcherDelegate next = (_, _) => Task.CompletedTask;
 
@@ -133,7 +138,7 @@ public sealed class ReportMiddlewareTests
             };
 
         var middleware = new ReportMiddleware(builder);
-        var context = CreateContext();
+        var context = CreateValidatedContext();
 
         WatcherDelegate next = (_, _) => Task.CompletedTask;
 
@@ -151,7 +156,7 @@ public sealed class ReportMiddlewareTests
         // Arrange
         var builder = new FakeValidationReportBuilder();
         var middleware = new ReportMiddleware(builder);
-        var context = CreateContext();
+        var context = CreateValidatedContext();
         var nextCalled = false;
 
         WatcherDelegate next = (_, _) =>
@@ -173,7 +178,7 @@ public sealed class ReportMiddlewareTests
         // Arrange
         var builder = new FakeValidationReportBuilder();
         var middleware = new ReportMiddleware(builder);
-        var context = CreateContext();
+        var context = CreateValidatedContext();
         using var cancellationTokenSource = new CancellationTokenSource();
 
         CancellationToken receivedToken = default;
@@ -190,32 +195,4 @@ public sealed class ReportMiddlewareTests
         // Assert
         Assert.Equal(cancellationTokenSource.Token, receivedToken);
     }
-
-    private static WatcherContext CreateContext() =>
-        new()
-        {
-            ContractSlug = "products",
-            Payload = default,
-            Contract = CreateContract(),
-            ValidationResult = CreateValidationResult()
-        };
-
-    private static PublishedContract CreateContract() =>
-        new()
-        {
-            Slug = "products",
-            ContractVersion = 1,
-            Rules = []
-        };
-
-    private static ContractValidationResult CreateValidationResult() => new() { Violations = [] };
-
-    private static ValidationReport CreateReport() =>
-        new()
-        {
-            ReportId = Guid.NewGuid(),
-            ContractVersion = 1,
-            Status = ValidationStatus.Passed,
-            Violations = []
-        };
 }

@@ -2,8 +2,9 @@ using ContractWatcher.Common.Contracts;
 using ContractWatcher.Common.Enums;
 using ContractWatcher.SDK.Reporting.Delegates;
 using ContractWatcher.SDK.Reporting.Handlers;
-using ContractWatcher.SDK.Reporting.Models;
-using ContractWatcher.SDK.Validation.Models;
+
+// Fixtures
+using static ContractWatcher.SDK.Tests.Fixtures.ReportingFixture;
 
 namespace ContractWatcher.SDK.Tests.Reporting.Handlers;
 
@@ -14,7 +15,7 @@ public sealed class ReportStatusHandlerTests
     {
         // Arrange
         var handler = new ReportStatusHandler();
-        var context = CreateContext(violations: []);
+        var context = CreateReportBuildContext(violations: []);
 
         ReportBuildDelegate next = _ => { };
 
@@ -30,7 +31,7 @@ public sealed class ReportStatusHandlerTests
     {
         // Arrange
         var handler = new ReportStatusHandler();
-        var context = CreateContext(violations: []);
+        var context = CreateReportBuildContext(violations: []);
         var nextCalled = false;
 
         ReportBuildDelegate next = _ => { nextCalled = true; };
@@ -54,7 +55,7 @@ public sealed class ReportStatusHandlerTests
             Type = ViolationType.RequiredFieldMissing
         };
 
-        var context = CreateContext(violations: [violation]);
+        var context = CreateReportBuildContext(violations: [violation]);
 
         ReportBuildDelegate next = _ => { };
 
@@ -77,7 +78,7 @@ public sealed class ReportStatusHandlerTests
             Type = ViolationType.RequiredFieldMissing
         };
 
-        var context = CreateContext(violations: [violation]);
+        var context = CreateReportBuildContext(violations: [violation]);
         var nextCalled = false;
 
         ReportBuildDelegate next = _ => { nextCalled = true; };
@@ -109,8 +110,7 @@ public sealed class ReportStatusHandlerTests
     {
         // Arrange
         var handler = new ReportStatusHandler();
-
-        var context = CreateContext(violations: []);
+        var context = CreateReportBuildContext(violations: []);
 
         // Act
         var action = () => handler.Handle(context, null!);
@@ -118,19 +118,4 @@ public sealed class ReportStatusHandlerTests
         // Assert
         Assert.Throws<ArgumentNullException>(action);
     }
-
-    private static ReportBuildContext CreateContext(IReadOnlyCollection<ValidationViolation> violations) =>
-        new()
-        {
-            Contract = new PublishedContract
-            {
-                Slug = "products",
-                ContractVersion = 1,
-                Rules = []
-            },
-            ValidationResult = new ContractValidationResult
-            {
-                Violations = violations
-            }
-        };
 }

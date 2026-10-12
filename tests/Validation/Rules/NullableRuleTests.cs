@@ -1,8 +1,9 @@
 using System.Text.Json;
-using ContractWatcher.Common.Contracts;
 using ContractWatcher.Common.Enums;
-using ContractWatcher.SDK.Validation.Models;
 using ContractWatcher.SDK.Validation.Rules;
+
+// Fixtures
+using static ContractWatcher.SDK.Tests.Fixtures.ValidationFixture;
 
 namespace ContractWatcher.SDK.Tests.Validation.Rules;
 
@@ -14,7 +15,7 @@ public sealed class NullableRuleTests
     public void CanValidate_WhenFieldIsMissing_ReturnsFalse()
     {
         // Arrange
-        var context = CreateContext(nullable: false, value: null);
+        var context = CreateValidationContext(nullable: false, value: null);
 
         // Act
         var result = _rule.CanValidate(context);
@@ -28,7 +29,7 @@ public sealed class NullableRuleTests
     {
         // Arrange
         using var document = JsonDocument.Parse(""" "customer-1" """);
-        var context = CreateContext(nullable: false, value: document.RootElement);
+        var context = CreateValidationContext(nullable: false, value: document.RootElement);
 
         // Act
         var result = _rule.CanValidate(context);
@@ -42,7 +43,7 @@ public sealed class NullableRuleTests
     {
         // Arrange
         using var document = JsonDocument.Parse("""null""");
-        var context = CreateContext(nullable: true, value: document.RootElement);
+        var context = CreateValidationContext(nullable: true, value: document.RootElement);
 
         // Act
         var result = _rule.Validate(context);
@@ -56,7 +57,7 @@ public sealed class NullableRuleTests
     {
         // Arrange
         using var document = JsonDocument.Parse("null");
-        var context = CreateContext(nullable: false, value: document.RootElement);
+        var context = CreateValidationContext(nullable: false, value: document.RootElement);
 
         // Act
         var result = _rule.Validate(context);
@@ -73,8 +74,8 @@ public sealed class NullableRuleTests
     public void Validate_WhenNonNullableFieldContainsValue_ReturnsNull()
     {
         // Arrange
-        using var document = JsonDocument.Parse("\"customer-1\"");
-        var context = CreateContext(nullable: false, value: document.RootElement);
+        using var document = JsonDocument.Parse(""" "customer-1" """);
+        var context = CreateValidationContext(nullable: false, value: document.RootElement);
 
         // Act
         var result = _rule.Validate(context);
@@ -87,27 +88,12 @@ public sealed class NullableRuleTests
     public void Validate_WhenFieldIsMissing_ReturnsNull()
     {
         // Arrange
-        var context = CreateContext(nullable: false, value: null);
+        var context = CreateValidationContext(nullable: false, value: null);
 
         // Act
         var result = _rule.Validate(context);
 
         // Assert
         Assert.Null(result);
-    }
-
-    private static ValidationContext CreateContext(bool nullable, JsonElement? value)
-    {
-        return new ValidationContext
-        {
-            Rule = new ContractRule
-            {
-                FieldName = "customer_id",
-                Type = ContractFieldType.String,
-                Required = true,
-                Nullable = nullable
-            },
-            Value = value
-        };
     }
 }
