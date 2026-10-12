@@ -7,6 +7,9 @@ using ContractWatcher.SDK.Validation.Interfaces;
 using ContractWatcher.SDK.Validation.Models;
 using Moq;
 
+// Fixtures
+using static ContractWatcher.SDK.Tests.Fixtures.ExecutionFixture;
+
 namespace ContractWatcher.SDK.Tests.Execution.Middlewares;
 
 public sealed class ValidationMiddlewareTests
@@ -27,7 +30,7 @@ public sealed class ValidationMiddlewareTests
         // Arrange
         var validationResult = new ContractValidationResult { Violations = [] };
         var validator = new Mock<IContractValidator>();
-        var context = CreateContext();
+        var context = CreateValidatedContext();
 
         validator
             .Setup(x => x.Validate(context.Payload, context.Contract!))
@@ -51,7 +54,7 @@ public sealed class ValidationMiddlewareTests
         var violation = new ValidationViolation { FieldName = "id", Type = default };
         var validationResult = new ContractValidationResult { Violations = [violation] };
         var validator = new Mock<IContractValidator>();
-        var context = CreateContext();
+        var context = CreateValidatedContext();
 
         validator
             .Setup(x => x.Validate(context.Payload, context.Contract!))
@@ -74,7 +77,7 @@ public sealed class ValidationMiddlewareTests
         // Arrange
         var validationResult = new ContractValidationResult { Violations = [] };
         var validator = new Mock<IContractValidator>();
-        var context = CreateContext();
+        var context = CreateValidatedContext();
 
         validator
             .Setup(x => x.Validate(context.Payload, context.Contract!))
@@ -114,7 +117,7 @@ public sealed class ValidationMiddlewareTests
         // Arrange
         var validationResult = new ContractValidationResult { Violations = [] };
         var validator = new Mock<IContractValidator>();
-        var context = CreateContext();
+        var context = CreateValidatedContext();
 
         validator
             .Setup(x => x.Validate(context.Payload, context.Contract!))
@@ -162,17 +165,4 @@ public sealed class ValidationMiddlewareTests
         // Assert
         await Assert.ThrowsAsync<ArgumentNullException>(action);
     }
-
-    private static WatcherContext CreateContext() =>
-        new()
-        {
-            ContractSlug = "products",
-            Payload = default,
-            Contract = new PublishedContract
-            {
-                Slug = "products",
-                ContractVersion = 1,
-                Rules = []
-            }
-        };
 }

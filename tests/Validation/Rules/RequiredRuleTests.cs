@@ -1,10 +1,11 @@
 using System.Text.Json;
-using ContractWatcher.Common.Contracts;
 using ContractWatcher.Common.Enums;
-using ContractWatcher.SDK.Validation.Models;
 using ContractWatcher.SDK.Validation.Rules;
 
-namespace ContractWatcher.SDK.Tests.Rules;
+// Fixtures
+using static ContractWatcher.SDK.Tests.Fixtures.ValidationFixture;
+
+namespace ContractWatcher.SDK.Tests.Validation.Rules;
 
 public sealed class RequiredRuleTests
 {
@@ -14,7 +15,7 @@ public sealed class RequiredRuleTests
     public void CanValidate_WhenFieldIsRequired_ReturnsTrue()
     {
         // Arrange
-        var context = CreateContext(required: true, value: null);
+        var context = CreateValidationContext(required: true, value: null);
 
         // Act
         var result = _rule.CanValidate(context);
@@ -27,7 +28,7 @@ public sealed class RequiredRuleTests
     public void CanValidate_WhenFieldIsOptional_ReturnsFalse()
     {
         // Arrange
-        var context = CreateContext(required: false, value: null);
+        var context = CreateValidationContext(required: false, value: null);
 
         // Act
         var result = _rule.CanValidate(context);
@@ -40,7 +41,7 @@ public sealed class RequiredRuleTests
     public void Validate_WhenRequiredFieldIsMissing_ReturnsViolation()
     {
         // Arrange
-        var context = CreateContext(required: true, value: null);
+        var context = CreateValidationContext(required: true, value: null);
 
         // Act
         var result = _rule.Validate(context);
@@ -58,7 +59,7 @@ public sealed class RequiredRuleTests
     {
         // Arrange
         using var document = JsonDocument.Parse(""" "customer-1" """);
-        var context = CreateContext(required: true, value: document.RootElement);
+        var context = CreateValidationContext(required: true, value: document.RootElement);
 
         // Act
         var result = _rule.Validate(context);
@@ -72,7 +73,7 @@ public sealed class RequiredRuleTests
     {
         // Arrange
         using var document = JsonDocument.Parse("null");
-        var context = CreateContext(required: true, value: document.RootElement);
+        var context = CreateValidationContext(required: true, value: document.RootElement);
 
         // Act
         var result = _rule.Validate(context);
@@ -85,27 +86,12 @@ public sealed class RequiredRuleTests
     public void Validate_WhenFieldIsOptional_ReturnsNull()
     {
         // Arrange
-        var context = CreateContext(required: false, value: null);
+        var context = CreateValidationContext(required: false, value: null);
 
         // Act
         var result = _rule.Validate(context);
 
         // Assert
         Assert.Null(result);
-    }
-
-    private static ValidationContext CreateContext(bool required, JsonElement? value)
-    {
-        return new ValidationContext
-        {
-            Rule = new ContractRule
-            {
-                FieldName = "customer_id",
-                Type = ContractFieldType.String,
-                Required = required,
-                Nullable = false
-            },
-            Value = value
-        };
     }
 }

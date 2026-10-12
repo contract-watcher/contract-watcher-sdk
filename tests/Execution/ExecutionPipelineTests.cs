@@ -3,6 +3,9 @@ using ContractWatcher.SDK.Execution.Interfaces;
 using ContractWatcher.SDK.Execution.Models;
 using ContractWatcher.SDK.Tests.Fakes;
 
+// Fixtures
+using static ContractWatcher.SDK.Tests.Fixtures.ExecutionFixture;
+
 namespace ContractWatcher.SDK.Tests.Execution;
 
 public sealed class ExecutionPipelineTests
@@ -170,11 +173,4 @@ public sealed class ExecutionPipelineTests
         // Assert
         Assert.Equal(cancellationTokenSource.Token, receivedToken);
     }
-
-    private static WatcherContext CreateContext() =>
-        new()
-        {
-            ContractSlug = "products",
-            Payload = default
-        };
 }

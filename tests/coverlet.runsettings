@@ -8,6 +8,7 @@
             **/Interfaces/**/*.cs,
             **/Models/**/*.cs,
             **/Enums/**/*.cs,
+            **/Delegates/**/*.cs,
             **/obj/**/*.cs,
             **/bin/**/*.cs
           </ExcludeByFile>

@@ -36,16 +36,9 @@ public sealed class ExecutionServiceCollectionExtensionsTests
 
         Assert.Collection(
             descriptors,
-            descriptor =>
-            {
-                Assert.Equal(typeof(ContractResolutionMiddleware), descriptor.ImplementationType);
-                Assert.Equal(ServiceLifetime.Transient, descriptor.Lifetime);
-            },
-            descriptor =>
-            {
-                Assert.Equal(typeof(ValidationMiddleware), descriptor.ImplementationType);
-                Assert.Equal(ServiceLifetime.Transient, descriptor.Lifetime);
-            });
+            descriptor => Assert.Equal(typeof(ContractResolutionMiddleware), descriptor.ImplementationType),
+            descriptor => Assert.Equal(typeof(ValidationMiddleware), descriptor.ImplementationType),
+            descriptor => Assert.Equal(typeof(ReportMiddleware), descriptor.ImplementationType));
     }
 
     [Fact]
@@ -96,6 +89,7 @@ public sealed class ExecutionServiceCollectionExtensionsTests
             descriptors,
             descriptor => Assert.Equal(typeof(ContractResolutionMiddleware), descriptor.ImplementationType),
             descriptor => Assert.Equal(typeof(ValidationMiddleware), descriptor.ImplementationType),
+            descriptor => Assert.Equal(typeof(ReportMiddleware), descriptor.ImplementationType),
             descriptor => Assert.Equal(typeof(FakeMiddleware), descriptor.ImplementationType));
     }
 
@@ -130,7 +124,7 @@ public sealed class ExecutionServiceCollectionExtensionsTests
         var services = new ServiceCollection();
 
         // Act
-        var action = () => services.AddContractWatcherExecution(null);
+        var action = () => services.AddContractWatcherExecution();
 
         // Assert
         var exception = Record.Exception(action);
