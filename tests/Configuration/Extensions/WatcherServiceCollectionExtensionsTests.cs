@@ -1,20 +1,39 @@
+using ContractWatcher.SDK.Configuration.Extensions;
+using ContractWatcher.SDK.Configuration.Options;
 using ContractWatcher.SDK.Contracts.Interfaces;
 using ContractWatcher.SDK.Execution.Interfaces;
 using ContractWatcher.SDK.Reporting.Interfaces;
 using ContractWatcher.SDK.Validation.Interfaces;
-using ContractWatcher.SDK.Watcher.Extensions;
 using ContractWatcher.SDK.Watcher.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
-namespace ContractWatcher.SDK.Tests.Watcher.Extensions;
+// Fixtures
+using static ContractWatcher.SDK.Tests.Fixtures.ConfigurationFixture;
 
-public sealed class WatcherServiceCollectionExtensionsTests
+namespace ContractWatcher.SDK.Tests.Configuration.Extensions;
+
+public sealed class ContractWatcherServiceCollectionExtensionsTests
 {
     [Fact]
     public void AddContractWatcher_WhenServicesIsNull_ThrowsArgumentNullException()
     {
         // Act
-        var action = () => WatcherServiceCollectionExtensions.AddContractWatcher(null!);
+        var action = () => 
+            ContractWatcherServiceCollectionExtensions.AddContractWatcher(null!, ConfigureOptions);
+
+        // Assert
+        Assert.Throws<ArgumentNullException>(action);
+    }
+
+    [Fact]
+    public void AddContractWatcher_WhenConfigureIsNull_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        // Act
+        var action = () => services.AddContractWatcher(null!);
 
         // Assert
         Assert.Throws<ArgumentNullException>(action);
@@ -27,10 +46,26 @@ public sealed class WatcherServiceCollectionExtensionsTests
         var services = new ServiceCollection();
 
         // Act
-        var result = services.AddContractWatcher();
+        var result = services.AddContractWatcher(ConfigureOptions);
 
         // Assert
         Assert.Same(services, result);
+    }
+
+    [Fact]
+    public void AddContractWatcher_RegistersConfiguredOptions()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        services.AddContractWatcher(ConfigureOptions);
+        using var serviceProvider = services.BuildServiceProvider();
+
+        // Act
+        var options = serviceProvider.GetRequiredService<IOptions<ContractWatcherOptions>>().Value;
+
+        // Assert
+        Assert.Equal(CoreUrl, options.CoreUrl);
+        Assert.Equal(IntegrationKey, options.IntegrationKey);
     }
 
     [Fact]
@@ -38,7 +73,7 @@ public sealed class WatcherServiceCollectionExtensionsTests
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddContractWatcher();
+        services.AddContractWatcher(ConfigureOptions);
         using var serviceProvider = services.BuildServiceProvider();
 
         // Act
@@ -53,7 +88,7 @@ public sealed class WatcherServiceCollectionExtensionsTests
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddContractWatcher();
+        services.AddContractWatcher(ConfigureOptions);
         using var serviceProvider = services.BuildServiceProvider();
 
         // Act
@@ -78,8 +113,8 @@ public sealed class WatcherServiceCollectionExtensionsTests
         var services = new ServiceCollection();
 
         // Act
-        services.AddContractWatcher();
-        services.AddContractWatcher();
+        services.AddContractWatcher(ConfigureOptions);
+        services.AddContractWatcher(ConfigureOptions);
 
         // Assert
         Assert.Single(services, x => x.ServiceType == typeof(IContractWatcher));
