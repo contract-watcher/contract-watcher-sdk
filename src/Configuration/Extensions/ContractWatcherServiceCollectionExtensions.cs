@@ -2,6 +2,7 @@ using ContractWatcher.SDK.Configuration.Options;
 using ContractWatcher.SDK.Contracts.Interfaces;
 using ContractWatcher.SDK.Contracts.Providers;
 using ContractWatcher.SDK.Contracts.Stores;
+using ContractWatcher.SDK.Core.Extensions;
 using ContractWatcher.SDK.Execution.Extensions;
 using ContractWatcher.SDK.Reporting.Extensions;
 using ContractWatcher.SDK.Validation.Extensions;
@@ -42,6 +43,8 @@ public static class ContractWatcherServiceCollectionExtensions
                 $"{nameof(ContractWatcherOptions.IntegrationKey)} is required.")
             .ValidateOnStart();
 
+        services.AddContractWatcherCore();
+        
         services.TryAddSingleton<IContractStore, InMemoryContractStore>();
         services.TryAddTransient<IContractProvider, ContractProvider>();
 

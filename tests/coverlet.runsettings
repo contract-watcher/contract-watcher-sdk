@@ -9,6 +9,7 @@
             **/Models/**/*.cs,
             **/Enums/**/*.cs,
             **/Delegates/**/*.cs,
+            **/Constants/**/*.cs,
             **/obj/**/*.cs,
             **/bin/**/*.cs
           </ExcludeByFile>
