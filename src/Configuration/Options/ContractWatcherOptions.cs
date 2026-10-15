@@ -14,4 +14,9 @@ public sealed class ContractWatcherOptions
     /// Ключ интеграции
     /// </summary>
     public string IntegrationKey { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Интервал фонового обновления опубликованных контрактов
+    /// </summary>
+    public TimeSpan ContractRefreshInterval { get; set; } = TimeSpan.FromMinutes(5);
 }

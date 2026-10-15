@@ -1,7 +1,5 @@
 using ContractWatcher.SDK.Configuration.Options;
-using ContractWatcher.SDK.Contracts.Interfaces;
-using ContractWatcher.SDK.Contracts.Providers;
-using ContractWatcher.SDK.Contracts.Stores;
+using ContractWatcher.SDK.Contracts.Extensions;
 using ContractWatcher.SDK.Core.Extensions;
 using ContractWatcher.SDK.Execution.Extensions;
 using ContractWatcher.SDK.Reporting.Extensions;
@@ -41,13 +39,13 @@ public static class ContractWatcherServiceCollectionExtensions
                 $"{nameof(ContractWatcherOptions.CoreUrl)} must be a valid HTTP or HTTPS URL.")
             .Validate(static options => !string.IsNullOrWhiteSpace(options.IntegrationKey),
                 $"{nameof(ContractWatcherOptions.IntegrationKey)} is required.")
+            .Validate(options => options.ContractRefreshInterval > TimeSpan.Zero,
+                "ContractRefreshInterval must be greater than zero.")
             .ValidateOnStart();
 
+        services.AddLogging();
         services.AddContractWatcherCore();
-        
-        services.TryAddSingleton<IContractStore, InMemoryContractStore>();
-        services.TryAddTransient<IContractProvider, ContractProvider>();
-
+        services.AddContractWatcherContracts();
         services.AddContractValidation();
         services.AddContractWatcherReporting();
         services.AddContractWatcherExecution();

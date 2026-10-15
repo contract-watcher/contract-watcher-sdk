@@ -23,7 +23,7 @@ public static class ExecutionServiceCollectionExtensions
             throw new ArgumentNullException(nameof(services));
 
         var builder = new ExecutionPipelineBuilder(services);
-
+        
         builder.UseDefaultMiddlewares();
         configure?.Invoke(builder);
         services.TryAddTransient<IExecutionPipeline, ExecutionPipeline>();

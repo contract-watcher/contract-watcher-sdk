@@ -18,6 +18,7 @@ public static class ContractWatcherMvcExtensions
         if (builder is null)
             throw new ArgumentNullException(nameof(builder));
 
+        builder.Services.AddLogging();
         builder.Services.AddScoped<ContractWatcherResourceFilter>();
 
         builder.AddMvcOptions(options =>
