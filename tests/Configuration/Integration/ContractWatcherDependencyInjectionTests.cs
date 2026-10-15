@@ -35,13 +35,17 @@ public sealed class ContractWatcherDependencyInjectionTests
         using var host = CreateHost();
         await host.StartAsync();
 
+        await using var scope = host.Services.CreateAsyncScope();
+        var services = scope.ServiceProvider;
+
         // Act
-        var watcher = host.Services.GetRequiredService<IContractWatcher>();
-        var contractStore = host.Services.GetRequiredService<IContractStore>();
-        var contractProvider = host.Services.GetRequiredService<IContractProvider>();
-        var validator = host.Services.GetRequiredService<IContractValidator>();
-        var reportBuilder = host.Services.GetRequiredService<IValidationReportBuilder>();
-        var executionPipeline = host.Services.GetRequiredService<IExecutionPipeline>();
+        var watcher = services.GetRequiredService<IContractWatcher>();
+        var contractStore = services.GetRequiredService<IContractStore>();
+        var contractProvider = services.GetRequiredService<IContractProvider>();
+        var validator = services.GetRequiredService<IContractValidator>();
+        var reportBuilder = services.GetRequiredService<IValidationReportBuilder>();
+        var executionPipeline = services.GetRequiredService<IExecutionPipeline>();
+        var reportPublisher = services.GetRequiredService<IReportPublisher>();
 
         // Assert
         Assert.NotNull(watcher);
@@ -50,6 +54,7 @@ public sealed class ContractWatcherDependencyInjectionTests
         Assert.NotNull(validator);
         Assert.NotNull(reportBuilder);
         Assert.NotNull(executionPipeline);
+        Assert.NotNull(reportPublisher);
     }
 
     [Fact]

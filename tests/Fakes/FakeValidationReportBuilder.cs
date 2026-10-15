@@ -21,6 +21,7 @@ public sealed class FakeValidationReportBuilder : IValidationReportBuilder
     private static ValidationReport CreateReport() =>
         new()
         {
+            Slug = "test-contract",
             ReportId = Guid.NewGuid(),
             ContractVersion = 1,
             Status = ValidationStatus.Passed,

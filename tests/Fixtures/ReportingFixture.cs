@@ -13,6 +13,7 @@ public static class ReportingFixture
         IReadOnlyCollection<ValidationViolation>? violations = null) =>
         new()
         {
+            Slug = "test-contract",
             ReportId = Guid.NewGuid(),
             ContractVersion = contractVersion,
             Status = status,

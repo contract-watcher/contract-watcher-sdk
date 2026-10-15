@@ -46,6 +46,7 @@ public sealed class ExecutionPipelineBuilder
             AddMiddleware<TechnicalErrorMiddleware>()
             .AddMiddleware<ContractResolutionMiddleware>()
             .AddMiddleware<ValidationMiddleware>()
-            .AddMiddleware<ReportMiddleware>();
+            .AddMiddleware<ReportMiddleware>()
+            .AddMiddleware<ReportPublishingMiddleware>();
     }
 }

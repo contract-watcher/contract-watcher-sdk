@@ -120,7 +120,8 @@ public sealed class ExecutionPipelineBuilderTests
             descriptor => Assert.Equal(typeof(TechnicalErrorMiddleware), descriptor.ImplementationType),
             descriptor => Assert.Equal(typeof(ContractResolutionMiddleware), descriptor.ImplementationType),
             descriptor => Assert.Equal(typeof(ValidationMiddleware), descriptor.ImplementationType),
-            descriptor => Assert.Equal(typeof(ReportMiddleware), descriptor.ImplementationType));
+            descriptor => Assert.Equal(typeof(ReportMiddleware), descriptor.ImplementationType),
+            descriptor => Assert.Equal(typeof(ReportPublishingMiddleware), descriptor.ImplementationType));
     }
 
     [Fact]
