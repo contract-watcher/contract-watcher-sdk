@@ -18,8 +18,7 @@ public sealed class ReportMiddleware : IWatcherMiddleware
     /// <param name="reportBuilder">Builder, необходимый для формирования отчета проверки</param>
     public ReportMiddleware(IValidationReportBuilder reportBuilder) =>
         _reportBuilder = reportBuilder ?? throw new ArgumentNullException(nameof(reportBuilder));
-
-    /// <inheritdoc />
+    
     public async Task InvokeAsync(WatcherContext context, WatcherDelegate next, CancellationToken cancellationToken)
     {
         if (context is null)

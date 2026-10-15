@@ -1,6 +1,7 @@
 using ContractWatcher.SDK.Reporting.Builders;
 using ContractWatcher.SDK.Reporting.Handlers;
 using ContractWatcher.SDK.Reporting.Interfaces;
+using ContractWatcher.SDK.Reporting.Publishers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -26,6 +27,7 @@ public static class ReportingServiceCollectionExtensions
         services.TryAddEnumerable(ServiceDescriptor.Transient<IReportBuildHandler, ReportStatusHandler>());
         services.TryAddEnumerable(ServiceDescriptor.Transient<IReportBuildHandler, ReportViolationsHandler>());
         services.TryAddTransient<IValidationReportBuilder, ValidationReportBuilder>();
+        services.TryAddScoped<IReportPublisher, CoreReportPublisher>();
 
         return services;
     }

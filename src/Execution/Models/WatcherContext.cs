@@ -36,7 +36,7 @@ public sealed class WatcherContext
     public WatcherStatus Status { get; set; } = WatcherStatus.Pending;
     
     /// <summary>
-    /// Cформированный отчет проверки
+    /// Сформированный отчет проверки
     /// </summary>
     public ValidationReport? Report { get; set; }
 }

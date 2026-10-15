@@ -4,9 +4,9 @@
     "net10.0": {
       "ContractWatcher.Common": {
         "type": "Direct",
-        "requested": "[1.1.0, )",
-        "resolved": "1.1.0",
-        "contentHash": "yydM2cSEJfD7v39/7txObgQPIjslYBRdS60r4KRd/jJ2bHz9lJeUES3+C2bFAnphojOuehyGfKcyf1gciL+APQ=="
+        "requested": "[1.2.0, )",
+        "resolved": "1.2.0",
+        "contentHash": "zH/EQTADxf4Nn1wgkeKB16HUMwYHgA3IDE+BtOyutpgG8Hy9VElIwacRaxBbHrO8uzo0us6hl62rPFweJkEaig=="
       }
     }
   }

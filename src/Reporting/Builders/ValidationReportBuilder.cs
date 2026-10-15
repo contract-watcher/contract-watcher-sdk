@@ -45,6 +45,7 @@ public sealed class ValidationReportBuilder : IValidationReportBuilder
 
         return new ValidationReport
         {
+            Slug = contract.Slug,
             ReportId = context.ReportId,
             ContractVersion = contract.ContractVersion,
             Status = context.Status.Value,
