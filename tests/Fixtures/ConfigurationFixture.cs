@@ -6,7 +6,7 @@ namespace ContractWatcher.SDK.Tests.Fixtures;
 
 public static class ConfigurationFixture
 {
-    public const string CoreUrl = "https://localhost:5001";
+    public const string CoreUrl = "https://localhost:5001/api/sdk/";
     public const string IntegrationKey = "integration-key";
     
     public static void ConfigureOptions(ContractWatcherOptions options)

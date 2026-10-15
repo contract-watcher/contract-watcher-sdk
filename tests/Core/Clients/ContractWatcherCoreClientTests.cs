@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using ContractWatcher.SDK.Core.Clients;
+using ContractWatcher.SDK.Core.Enums;
+using ContractWatcher.SDK.Core.Exceptions;
 using Moq;
 using Moq.Protected;
 
@@ -64,18 +66,26 @@ public sealed class ContractWatcherCoreClientTests
         Assert.Null(result);
     }
 
-    [Fact]
-    public async Task GetContractAsync_WhenCoreReturnsError_ThrowsHttpRequestException()
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized, CoreRequestError.Unauthorized)]
+    [InlineData(HttpStatusCode.Forbidden, CoreRequestError.Forbidden)]
+    [InlineData(HttpStatusCode.InternalServerError, CoreRequestError.ServerError)]
+    [InlineData(HttpStatusCode.BadGateway, CoreRequestError.ServerError)]
+    [InlineData(HttpStatusCode.BadRequest, CoreRequestError.UnexpectedResponse)]
+    public async Task GetContractAsync_WhenCoreReturnsError_ThrowsExpectedCoreRequestException(HttpStatusCode statusCode, CoreRequestError expectedError)
     {
         // Arrange
-        using var httpClient = CreateHttpClient(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+        using var httpClient = CreateHttpClient(new HttpResponseMessage(statusCode));
         var client = new ContractWatcherCoreClient(httpClient);
 
         // Act
         var action = () => client.GetContractAsync("products");
 
         // Assert
-        await Assert.ThrowsAsync<HttpRequestException>(action);
+        var exception = await Assert.ThrowsAsync<CoreRequestException>(action);
+
+        Assert.Equal(expectedError, exception.Error);
+        Assert.Equal(statusCode, exception.StatusCode);
     }
 
     [Fact]
@@ -95,7 +105,9 @@ public sealed class ContractWatcherCoreClientTests
             .Callback<HttpRequestMessage, CancellationToken>((request, _) => { capturedRequest = request; })
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(contract) });
 
-        using var httpClient = new HttpClient(handler.Object) { BaseAddress = new Uri(CoreUrl) };
+        using var httpClient = new HttpClient(handler.Object);
+        httpClient.BaseAddress = new Uri(CoreUrl);
+        
         var client = new ContractWatcherCoreClient(httpClient);
 
         // Act
@@ -104,7 +116,7 @@ public sealed class ContractWatcherCoreClientTests
         // Assert
         Assert.NotNull(capturedRequest);
         Assert.Equal(HttpMethod.Get, capturedRequest.Method);
-        Assert.EndsWith("/contracts/products", capturedRequest.RequestUri!.AbsolutePath);
+        Assert.EndsWith("/api/sdk/contracts/products", capturedRequest.RequestUri!.AbsolutePath);
     }
 
     [Fact]
@@ -136,19 +148,26 @@ public sealed class ContractWatcherCoreClientTests
         // Отсутствие исключения означает успешную публикацию
     }
 
-    [Fact]
-    public async Task PublishReportAsync_WhenCoreReturnsError_ThrowsHttpRequestException()
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized, CoreRequestError.Unauthorized)]
+    [InlineData(HttpStatusCode.Forbidden, CoreRequestError.Forbidden)]
+    [InlineData(HttpStatusCode.InternalServerError, CoreRequestError.ServerError)]
+    [InlineData(HttpStatusCode.ServiceUnavailable, CoreRequestError.ServerError)]
+    [InlineData(HttpStatusCode.NotFound, CoreRequestError.UnexpectedResponse)]
+    public async Task PublishReportAsync_WhenCoreReturnsError_ThrowsExpectedCoreRequestException(HttpStatusCode statusCode, CoreRequestError expectedError)
     {
         // Arrange
         var report = CreateReport();
-        using var httpClient = CreateHttpClient(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+        using var httpClient = CreateHttpClient(new HttpResponseMessage(statusCode));
         var client = new ContractWatcherCoreClient(httpClient);
 
         // Act
         var action = () => client.PublishReportAsync(report);
 
         // Assert
-        await Assert.ThrowsAsync<HttpRequestException>(action);
+        var exception = await Assert.ThrowsAsync<CoreRequestException>(action);
+        Assert.Equal(expectedError, exception.Error);
+        Assert.Equal(statusCode, exception.StatusCode);
     }
 
     [Fact]
@@ -176,7 +195,9 @@ public sealed class ContractWatcherCoreClientTests
                 })
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
 
-        using var httpClient = new HttpClient(handler.Object) { BaseAddress = new Uri(CoreUrl) };
+        using var httpClient = new HttpClient(handler.Object);
+        httpClient.BaseAddress = new Uri(CoreUrl);
+        
         var client = new ContractWatcherCoreClient(httpClient);
 
         // Act
@@ -186,11 +207,98 @@ public sealed class ContractWatcherCoreClientTests
         Assert.NotNull(capturedRequest);
         Assert.NotNull(capturedBody);
         Assert.Equal(HttpMethod.Post, capturedRequest.Method);
-        Assert.EndsWith("/reports", capturedRequest.RequestUri!.AbsolutePath);
+        Assert.EndsWith("/api/sdk/reports", capturedRequest.RequestUri!.AbsolutePath);
 
         using var document = JsonDocument.Parse(capturedBody);
 
         Assert.Equal(report.ReportId, document.RootElement.GetProperty("reportId").GetGuid());
         Assert.Equal(report.ContractVersion, document.RootElement.GetProperty("contractVersion").GetInt32());
+    }
+    
+    [Fact]
+    public async Task GetContractAsync_WhenNetworkErrorOccurs_ThrowsNetworkError()
+    {
+        // Arrange
+        var networkException = new HttpRequestException("Network failure");
+
+        var handler = new Mock<HttpMessageHandler>();
+
+        handler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(networkException);
+
+        using var httpClient = new HttpClient(handler.Object);
+        httpClient.BaseAddress = new Uri(CoreUrl);
+
+        var client = new ContractWatcherCoreClient(httpClient);
+
+        // Act
+        var action = () => client.GetContractAsync("products");
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<CoreRequestException>(action);
+        Assert.Equal(CoreRequestError.NetworkError, exception.Error);
+        Assert.Same(networkException, exception.InnerException);
+    }
+    
+    [Fact]
+    public async Task GetContractAsync_WhenRequestTimesOut_ThrowsTimeoutError()
+    {
+        // Arrange
+        var timeoutException = new TaskCanceledException();
+        var handler = new Mock<HttpMessageHandler>();
+
+        handler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(timeoutException);
+
+        using var httpClient = new HttpClient(handler.Object);
+        httpClient.BaseAddress = new Uri(CoreUrl);
+
+        var client = new ContractWatcherCoreClient(httpClient);
+
+        // Act
+        var action = () => client.GetContractAsync("products");
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<CoreRequestException>(action);
+        Assert.Equal(CoreRequestError.Timeout, exception.Error);
+        Assert.Equal(HttpStatusCode.RequestTimeout, exception.StatusCode);
+        Assert.Same(timeoutException, exception.InnerException);
+    }
+    
+    [Fact]
+    public async Task GetContractAsync_WhenCancellationRequested_PropagatesCancellation()
+    {
+        // Arrange
+        using var cancellationTokenSource = new CancellationTokenSource();
+        cancellationTokenSource.Cancel();
+
+        var cancellationToken = cancellationTokenSource.Token;
+        var handler = new Mock<HttpMessageHandler>();
+
+        handler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns((HttpRequestMessage _, CancellationToken token) => Task.FromCanceled<HttpResponseMessage>(token));
+
+        using var httpClient = new HttpClient(handler.Object);
+        httpClient.BaseAddress = new Uri(CoreUrl);
+
+        var client = new ContractWatcherCoreClient(httpClient);
+
+        // Act
+        var action = () => client.GetContractAsync("products", cancellationToken);
+
+        // Assert
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(action);
     }
 }
