@@ -42,8 +42,9 @@ public sealed class ExecutionPipelineBuilder
     /// </summary>
     public ExecutionPipelineBuilder UseDefaultMiddlewares()
     {
-        return 
-            AddMiddleware<ContractResolutionMiddleware>()
+        return
+            AddMiddleware<TechnicalErrorMiddleware>()
+            .AddMiddleware<ContractResolutionMiddleware>()
             .AddMiddleware<ValidationMiddleware>()
             .AddMiddleware<ReportMiddleware>();
     }

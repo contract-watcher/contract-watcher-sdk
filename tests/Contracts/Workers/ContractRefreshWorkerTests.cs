@@ -1,4 +1,3 @@
-using ContractWatcher.Common.Contracts;
 using ContractWatcher.SDK.Configuration.Options;
 using ContractWatcher.SDK.Contracts.Interfaces;
 using ContractWatcher.SDK.Contracts.Workers;
@@ -14,7 +13,7 @@ namespace ContractWatcher.SDK.Tests.Contracts.Workers;
 public sealed class ContractRefreshWorkerTests
 {
     [Fact]
-    public async Task ExecuteAsync_WhenContractsExist_RefreshesContracts()
+    public async Task RefreshKnownContractsAsync_WhenContractsExist_RefreshesContracts()
     {
         // Arrange
         var store = new Mock<IContractStore>();
@@ -24,140 +23,132 @@ public sealed class ContractRefreshWorkerTests
             .Setup(x => x.GetSlugs())
             .Returns(["products", "customers"]);
 
-        var refreshed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var refreshedSlugs = new HashSet<string>();
-
-        refresher
-            .Setup(x => x.RefreshAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, CancellationToken>(
-                (slug, _) =>
-                {
-                    refreshedSlugs.Add(slug);
-
-                    if (refreshedSlugs.Count == 2)
-                        refreshed.TrySetResult(true);
-                })
-            .ReturnsAsync((PublishedContract?)null);
-
-        var (worker, timeProvider) = CreateWorker(store.Object, refresher.Object);
-        
-        await worker.StartAsync(CancellationToken.None);
-        await Task.Delay(10);
+        var worker = CreateWorker(store.Object, refresher.Object);
 
         // Act
-        timeProvider.Advance(TimeSpan.FromMinutes(5));
-        
-        await refreshed.Task.WaitAsync(TimeSpan.FromSeconds(1));
-        await worker.StopAsync(CancellationToken.None);
-
-        // Assert
-        Assert.Contains("products", refreshedSlugs);
-        Assert.Contains("customers", refreshedSlugs);
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_WhenRefreshThrowsCoreRequestException_ContinuesProcessing()
-    {
-        // Arrange
-        var store = new Mock<IContractStore>();
-        var refresher = new Mock<IContractRefresher>();
-
-        store
-            .Setup(x => x.GetSlugs())
-            .Returns(["products", "customers"]);
-
-        var refreshed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        refresher
-            .Setup(x => x.RefreshAsync("products", It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new CoreRequestException(CoreRequestError.ServerError, "Core unavailable."));
-
-        refresher
-            .Setup(x => x.RefreshAsync("customers", It.IsAny<CancellationToken>()))
-            .Callback(() => refreshed.TrySetResult(true))
-            .ReturnsAsync((PublishedContract?)null);
-
-        var (worker, timeProvider) = CreateWorker(store.Object, refresher.Object);
-        
-        await worker.StartAsync(CancellationToken.None);
-        await Task.Delay(10);
-
-        // Act
-        timeProvider.Advance(TimeSpan.FromMinutes(5));
-        
-        await refreshed.Task.WaitAsync(TimeSpan.FromSeconds(1));
-        await worker.StopAsync(CancellationToken.None);
+        await worker.RefreshKnownContractsAsync(CancellationToken.None);
 
         // Assert
         refresher.Verify(x => 
-            x.RefreshAsync("products", It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+            x.RefreshAsync("products", CancellationToken.None), Times.Once);
+
         refresher.Verify(x => 
-            x.RefreshAsync("customers", It.IsAny<CancellationToken>()), Times.AtLeastOnce);
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_WhenStoreIsEmpty_DoesNotRefreshContracts()
-    {
-        // Arrange
-        var store = new Mock<IContractStore>();
-        var refresher = new Mock<IContractRefresher>();
-
-        store
-            .Setup(x => x.GetSlugs())
-            .Returns([]);
-
-        var storeRead = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        store
-            .Setup(x => x.GetSlugs())
-            .Callback(() => storeRead.TrySetResult(true))
-            .Returns([]);
-
-        var (worker, timeProvider) = CreateWorker(store.Object, refresher.Object);
-        
-        await worker.StartAsync(CancellationToken.None);
-        await Task.Delay(10);
-
-        // Act
-        timeProvider.Advance(TimeSpan.FromMinutes(5));
-        
-        await storeRead.Task.WaitAsync(TimeSpan.FromSeconds(1));
-        await worker.StopAsync(CancellationToken.None);
-
-        // Assert
-        refresher.Verify(x => 
-            x.RefreshAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            x.RefreshAsync("customers", CancellationToken.None), Times.Once);
     }
     
     [Fact]
-    public async Task ExecuteAsync_BeforeIntervalElapsed_DoesNotRefreshContract()
+    public async Task RefreshKnownContractsAsync_WhenRefreshThrowsCoreRequestException_ContinuesProcessing()
     {
         // Arrange
         var store = new Mock<IContractStore>();
         var refresher = new Mock<IContractRefresher>();
-        var interval = TimeSpan.FromMinutes(5);
 
         store
             .Setup(x => x.GetSlugs())
-            .Returns(["products"]);
+            .Returns(["products", "customers"]);
 
-        var (worker, timeProvider) = CreateWorker(store.Object, refresher.Object);
+        refresher
+            .Setup(x => x.RefreshAsync(
+                "products",
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new CoreRequestException(CoreRequestError.ServerError, "Core unavailable."));
 
-        await worker.StartAsync(CancellationToken.None);
-        await Task.Delay(10);
+        var worker = CreateWorker(store.Object, refresher.Object);
 
         // Act
-        timeProvider.Advance(interval - TimeSpan.FromSeconds(1));
+        await worker.RefreshKnownContractsAsync(CancellationToken.None);
 
         // Assert
         refresher.Verify(x => 
-            x.RefreshAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            x.RefreshAsync("customers", CancellationToken.None), Times.Once);
+    }
+    
+    [Fact]
+    public async Task RefreshKnownContractsAsync_WhenStoreIsEmpty_DoesNotRefreshContracts()
+    {
+        // Arrange
+        var store = new Mock<IContractStore>();
+        var refresher = new Mock<IContractRefresher>();
 
-        await worker.StopAsync(CancellationToken.None);
+        store
+            .Setup(x => x.GetSlugs())
+            .Returns([]);
+
+        var worker = CreateWorker(store.Object, refresher.Object);
+
+        // Act
+        await worker.RefreshKnownContractsAsync(CancellationToken.None);
+
+        // Assert
+        refresher.Verify(x => x.RefreshAsync(
+            It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+    
+    [Fact]
+    public async Task RefreshKnownContractsAsync_WhenCancellationRequested_PropagatesOperationCanceledException()
+    {
+        // Arrange
+        var contractStore = new Mock<IContractStore>();
+        var contractRefresher = new Mock<IContractRefresher>();
+        
+        using var cancellationTokenSource = new CancellationTokenSource();
+        cancellationTokenSource.Cancel();
+
+        contractStore
+            .Setup(x => x.GetSlugs())
+            .Returns(["products"]);
+
+        // ReSharper disable once AccessToDisposedClosure
+        contractRefresher
+            .Setup(x => x.RefreshAsync("products", cancellationTokenSource.Token))
+            .ThrowsAsync(new OperationCanceledException(cancellationTokenSource.Token));
+
+        var worker = new ContractRefreshWorker(
+            contractStore.Object,
+            contractRefresher.Object,
+            Options.Create(new ContractWatcherOptions()),
+            TimeProvider.System,
+            NullLogger<ContractRefreshWorker>.Instance);
+
+        // Act
+        // ReSharper disable once AccessToDisposedClosure
+        var act = () => worker.RefreshKnownContractsAsync(cancellationTokenSource.Token);
+
+        // Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(act);
+    }
+    
+    [Fact]
+    public async Task RefreshKnownContractsAsync_WhenUnexpectedExceptionOccurs_DoesNotThrow()
+    {
+        // Arrange
+        var contractStore = new Mock<IContractStore>();
+        var contractRefresher = new Mock<IContractRefresher>();
+
+        contractStore
+            .Setup(x => x.GetSlugs())
+            .Returns(["products"]);
+
+        contractRefresher
+            .Setup(x => x.RefreshAsync("products", CancellationToken.None))
+            .ThrowsAsync(new InvalidOperationException("Unexpected error."));
+
+        var worker = new ContractRefreshWorker(
+            contractStore.Object,
+            contractRefresher.Object,
+            Options.Create(new ContractWatcherOptions()),
+            TimeProvider.System,
+            NullLogger<ContractRefreshWorker>.Instance);
+
+        // Act
+        var exception = await Record.ExceptionAsync(() => 
+            worker.RefreshKnownContractsAsync(CancellationToken.None));
+
+        // Assert
+        Assert.Null(exception);
     }
 
-    private static (ContractRefreshWorker Worker, FakeTimeProvider TimeProvider) 
-        CreateWorker(IContractStore contractStore, IContractRefresher contractRefresher)
+    private ContractRefreshWorker CreateWorker(IContractStore contractStore, IContractRefresher contractRefresher)
     {
         var timeProvider = new FakeTimeProvider();
         
@@ -168,13 +159,11 @@ public sealed class ContractRefreshWorkerTests
             ContractRefreshInterval = TimeSpan.FromMinutes(5)
         });
         
-        var worker = new ContractRefreshWorker(
+        return new ContractRefreshWorker(
             contractStore,
             contractRefresher,
             options,
             timeProvider,
             NullLogger<ContractRefreshWorker>.Instance);
-
-        return (worker, timeProvider);
     }
 }

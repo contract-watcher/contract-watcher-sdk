@@ -36,9 +36,17 @@ public sealed class ContractRefreshWorker(
             {
                 await contractRefresher.RefreshAsync(slug, cancellationToken);
             }
+            catch (OperationCanceledException)when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (CoreRequestException exception)
             {
                 logger.LogWarning(exception, "Failed to refresh contract '{ContractSlug}'.", slug);
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Unexpected error occurred while refreshing contract '{ContractSlug}'.", slug);
             }
         }
     }
