@@ -189,4 +189,21 @@ public sealed class InMemoryContractStoreTests
         // Assert
         Assert.Throws<ArgumentException>(action);
     }
+    
+    [Fact]
+    public void GetSlugs_ReturnsStoredContractSlugs()
+    {
+        // Arrange
+        var store = new InMemoryContractStore();
+        store.Set(CreateContract(slug: "products"));
+        store.Set(CreateContract(slug: "customers"));
+
+        // Act
+        var result = store.GetSlugs();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.Contains("products", result);
+        Assert.Contains("customers", result);
+    }
 }

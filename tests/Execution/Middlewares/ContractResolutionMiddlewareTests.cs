@@ -1,8 +1,13 @@
+using System.Net;
 using ContractWatcher.Common.Contracts;
 using ContractWatcher.SDK.Contracts.Interfaces;
+using ContractWatcher.SDK.Core.Enums;
+using ContractWatcher.SDK.Core.Exceptions;
 using ContractWatcher.SDK.Execution.Delegates;
 using ContractWatcher.SDK.Execution.Enums;
 using ContractWatcher.SDK.Execution.Middlewares;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 // Fixtures
@@ -17,7 +22,8 @@ public sealed class ContractResolutionMiddlewareTests
     public void Constructor_WhenContractProviderIsNull_ThrowsArgumentNullException()
     {
         // Act
-        var action = () => new ContractResolutionMiddleware(null!);
+        var action = () => new ContractResolutionMiddleware(
+            null!, NullLogger<ContractResolutionMiddleware>.Instance);
 
         // Assert
         Assert.Throws<ArgumentNullException>(action);
@@ -34,7 +40,8 @@ public sealed class ContractResolutionMiddlewareTests
             .Setup(x => x.GetAsync("products", It.IsAny<CancellationToken>()))
             .ReturnsAsync(contract);
 
-        var middleware = new ContractResolutionMiddleware(provider.Object);
+        var middleware = new ContractResolutionMiddleware(
+            provider.Object, NullLogger<ContractResolutionMiddleware>.Instance);
         var context = CreateContext();
 
         WatcherDelegate next = (_, _) => Task.CompletedTask;
@@ -57,7 +64,8 @@ public sealed class ContractResolutionMiddlewareTests
             .Setup(x => x.GetAsync("products", It.IsAny<CancellationToken>()))
             .ReturnsAsync(contract);
 
-        var middleware = new ContractResolutionMiddleware(provider.Object);
+        var middleware = new ContractResolutionMiddleware(
+            provider.Object, NullLogger<ContractResolutionMiddleware>.Instance);
         var context = CreateContext();
         var nextCalled = false;
 
@@ -80,7 +88,8 @@ public sealed class ContractResolutionMiddlewareTests
             .Setup(x => x.GetAsync("products", It.IsAny<CancellationToken>()))
             .ReturnsAsync((PublishedContract?)null);
 
-        var middleware = new ContractResolutionMiddleware(provider.Object);
+        var middleware = new ContractResolutionMiddleware(
+            provider.Object, NullLogger<ContractResolutionMiddleware>.Instance);
         var context = CreateContext();
         
         WatcherDelegate next = (_, _) => Task.CompletedTask;
@@ -102,7 +111,8 @@ public sealed class ContractResolutionMiddlewareTests
             .Setup(x => x.GetAsync("products", It.IsAny<CancellationToken>()))
             .ReturnsAsync((PublishedContract?)null);
 
-        var middleware = new ContractResolutionMiddleware(provider.Object);
+        var middleware = new ContractResolutionMiddleware(
+            provider.Object, NullLogger<ContractResolutionMiddleware>.Instance);
         var context = CreateContext();
         
         WatcherDelegate next = (_, _) => Task.CompletedTask;
@@ -124,7 +134,8 @@ public sealed class ContractResolutionMiddlewareTests
             .Setup(x => x.GetAsync("products", It.IsAny<CancellationToken>()))
             .ReturnsAsync((PublishedContract?)null);
         
-        var middleware = new ContractResolutionMiddleware(provider.Object);
+        var middleware = new ContractResolutionMiddleware(
+            provider.Object, NullLogger<ContractResolutionMiddleware>.Instance);
         var context = CreateContext();
         var nextCalled = false;
 
@@ -150,7 +161,8 @@ public sealed class ContractResolutionMiddlewareTests
             .Setup(x => x.GetAsync("products", cancellationTokenSource.Token))
             .ReturnsAsync(contract);
 
-        var middleware = new ContractResolutionMiddleware(provider.Object);
+        var middleware = new ContractResolutionMiddleware(
+            provider.Object, NullLogger<ContractResolutionMiddleware>.Instance);
         var context = CreateContext();
         
         WatcherDelegate next = (_, _) => Task.CompletedTask;
@@ -168,7 +180,8 @@ public sealed class ContractResolutionMiddlewareTests
     {
         // Arrange
         var provider = new Mock<IContractProvider>();
-        var middleware = new ContractResolutionMiddleware(provider.Object);
+        var middleware = new ContractResolutionMiddleware(
+            provider.Object, NullLogger<ContractResolutionMiddleware>.Instance);
         
         WatcherDelegate next = (_, _) => Task.CompletedTask;
 
@@ -184,7 +197,8 @@ public sealed class ContractResolutionMiddlewareTests
     {
         // Arrange
         var provider = new Mock<IContractProvider>();
-        var middleware = new ContractResolutionMiddleware(provider.Object);
+        var middleware = new ContractResolutionMiddleware(
+            provider.Object, NullLogger<ContractResolutionMiddleware>.Instance);
         var context = CreateContext();
 
         // Act
@@ -192,5 +206,50 @@ public sealed class ContractResolutionMiddlewareTests
 
         // Assert
         await Assert.ThrowsAsync<ArgumentNullException>(action);
+    }
+    
+    [Fact]
+    public void Constructor_WhenLoggerIsNull_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var provider = new Mock<IContractProvider>();
+
+        // Act
+        var action = () => new ContractResolutionMiddleware(provider.Object, null!);
+
+        // Assert
+        Assert.Throws<ArgumentNullException>(action);
+    }
+    
+    [Fact]
+    public async Task InvokeAsync_WhenCoreRequestFails_SetsContractUnavailableAndStopsPipeline()
+    {
+        // Arrange
+        var provider =
+            new Mock<IContractProvider>();
+
+        provider
+            .Setup(x => x.GetAsync(
+                "products",
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(
+                new CoreRequestException(
+                    CoreRequestError.ServerError,
+                    "Core unavailable.",
+                    HttpStatusCode.InternalServerError));
+
+        var logger = new Mock<ILogger<ContractResolutionMiddleware>>();
+        var middleware = new ContractResolutionMiddleware(provider.Object, logger.Object);
+        var context = CreateContext(contractSlug: "products");
+        var nextCalled = false;
+
+        WatcherDelegate next = (_, _) => { nextCalled = true; return Task.CompletedTask; };
+
+        // Act
+        await middleware.InvokeAsync(context, next, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(WatcherStatus.ContractUnavailable, context.Status);
+        Assert.False(nextCalled);
     }
 }

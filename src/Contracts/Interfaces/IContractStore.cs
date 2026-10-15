@@ -9,6 +9,12 @@ namespace ContractWatcher.SDK.Contracts.Interfaces;
 public interface IContractStore
 {
     /// <summary>
+    /// Получает slug всех контрактов, сохранённых в локальном хранилище
+    /// </summary>
+    /// <returns>Коллекция slug сохранённых контрактов</returns>
+    IReadOnlyCollection<string> GetSlugs();
+    
+    /// <summary>
     /// Получает локально сохранённый контракт по его slug
     /// </summary>
     /// <param name="slug">Уникальное имя контракта в рамках интеграции</param>

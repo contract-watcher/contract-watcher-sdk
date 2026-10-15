@@ -13,8 +13,24 @@ public sealed class ContractProviderTests
     [Fact]
     public void Constructor_WhenContractStoreIsNull_ThrowsArgumentNullException()
     {
+        // Arrange
+        var refresher = new Mock<IContractRefresher>();
+        
         // Act
-        var action = () => new ContractProvider(null!);
+        var action = () => new ContractProvider(null!, refresher.Object);
+
+        // Assert
+        Assert.Throws<ArgumentNullException>(action);
+    }
+    
+    [Fact]
+    public void Constructor_WhenRefresherIsNull_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var store = new Mock<IContractStore>();
+
+        // Act
+        var action = () => new ContractProvider(store.Object, null!);
 
         // Assert
         Assert.Throws<ArgumentNullException>(action);
@@ -27,7 +43,8 @@ public sealed class ContractProviderTests
         var contract = CreateContract();
         var store = new Mock<IContractStore>();
         store.Setup(x => x.Get("products")).Returns(contract);
-        var provider = new ContractProvider(store.Object);
+        var refresher = new Mock<IContractRefresher>();
+        var provider = new ContractProvider(store.Object, refresher.Object);
 
         // Act
         var result = await provider.GetAsync("products");
@@ -42,7 +59,8 @@ public sealed class ContractProviderTests
         // Arrange
         var store = new Mock<IContractStore>();
         store.Setup(x => x.Get("products")).Returns((PublishedContract?)null);
-        var provider = new ContractProvider(store.Object);
+        var refresher = new Mock<IContractRefresher>();
+        var provider = new ContractProvider(store.Object, refresher.Object);
 
         // Act
         var result = await provider.GetAsync("products");
@@ -59,7 +77,8 @@ public sealed class ContractProviderTests
     {
         // Arrange
         var store = new Mock<IContractStore>();
-        var provider = new ContractProvider(store.Object);
+        var refresher = new Mock<IContractRefresher>();
+        var provider = new ContractProvider(store.Object, refresher.Object);
 
         // Act
         var action = () => provider.GetAsync(slug!);
@@ -73,7 +92,8 @@ public sealed class ContractProviderTests
     {
         // Arrange
         var store = new Mock<IContractStore>();
-        var provider = new ContractProvider(store.Object);
+        var refresher = new Mock<IContractRefresher>();
+        var provider = new ContractProvider(store.Object, refresher.Object);
         using var cancellationTokenSource = new CancellationTokenSource();
         cancellationTokenSource.Cancel();
 

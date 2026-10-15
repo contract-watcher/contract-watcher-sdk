@@ -1,6 +1,6 @@
 using ContractWatcher.SDK.Reporting.Delegates;
 using ContractWatcher.SDK.Reporting.Handlers;
-using ContractWatcher.SDK.Tests.Fakes;
+using Microsoft.Extensions.Time.Testing;
 
 // Fixtures
 using static ContractWatcher.SDK.Tests.Fixtures.ReportingFixture;

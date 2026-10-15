@@ -14,6 +14,8 @@ public sealed class InMemoryContractStore : IContractStore
     /// </summary>
     private readonly ConcurrentDictionary<string, PublishedContract> _contracts = new(StringComparer.Ordinal);
 
+    public IReadOnlyCollection<string> GetSlugs() => _contracts.Keys.ToArray();
+
     public PublishedContract? Get(string slug)
     {
         if (String.IsNullOrWhiteSpace(slug))
