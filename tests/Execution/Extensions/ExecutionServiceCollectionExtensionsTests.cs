@@ -36,6 +36,7 @@ public sealed class ExecutionServiceCollectionExtensionsTests
 
         Assert.Collection(
             descriptors,
+            descriptor => Assert.Equal(typeof(TechnicalErrorMiddleware), descriptor.ImplementationType),
             descriptor => Assert.Equal(typeof(ContractResolutionMiddleware), descriptor.ImplementationType),
             descriptor => Assert.Equal(typeof(ValidationMiddleware), descriptor.ImplementationType),
             descriptor => Assert.Equal(typeof(ReportMiddleware), descriptor.ImplementationType));
@@ -87,6 +88,7 @@ public sealed class ExecutionServiceCollectionExtensionsTests
 
         Assert.Collection(
             descriptors,
+            descriptor => Assert.Equal(typeof(TechnicalErrorMiddleware), descriptor.ImplementationType),
             descriptor => Assert.Equal(typeof(ContractResolutionMiddleware), descriptor.ImplementationType),
             descriptor => Assert.Equal(typeof(ValidationMiddleware), descriptor.ImplementationType),
             descriptor => Assert.Equal(typeof(ReportMiddleware), descriptor.ImplementationType),

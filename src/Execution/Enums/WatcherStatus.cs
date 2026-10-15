@@ -23,5 +23,10 @@ public enum WatcherStatus
     /// <summary>
     /// Проверка не была выполнена, поскольку требуемый контракт недоступен
     /// </summary>
-    ContractUnavailable
+    ContractUnavailable,
+    
+    /// <summary>
+    /// Проверка не была выполнена из-за внутренней технической ошибки SDK
+    /// </summary>
+    TechnicalError
 }
