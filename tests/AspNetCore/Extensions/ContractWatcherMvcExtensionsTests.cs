@@ -8,38 +8,38 @@ namespace ContractWatcher.SDK.Tests.AspNetCore.Extensions;
 public sealed class ContractWatcherMvcExtensionsTests
 {
     [Fact]
-    public void AddContractWatcherFilter_WhenBuilderIsNull_ThrowsArgumentNullException()
+    public void AddContractWatcher_WhenBuilderIsNull_ThrowsArgumentNullException()
     {
-        // Act
-        var action = () => ContractWatcherMvcExtensions.AddContractWatcherFilter(null!);
+        // Arrange
+        Action action = () => ContractWatcherMvcExtensions.AddContractWatcher(null!);
 
-        // Assert
+        // Act & Assert
         Assert.Throws<ArgumentNullException>(action);
     }
 
     [Fact]
-    public void AddContractWatcherFilter_ReturnsSameMvcBuilder()
+    public void AddContractWatcher_ReturnsSameMvcBuilder()
     {
         // Arrange
         var services = new ServiceCollection();
         var builder = services.AddControllers();
 
         // Act
-        var result = builder.AddContractWatcherFilter();
+        var result = builder.AddContractWatcher();
 
         // Assert
         Assert.Same(builder, result);
     }
 
     [Fact]
-    public void AddContractWatcherFilter_RegistersResourceFilter()
+    public void AddContractWatcher_RegistersResourceFilter()
     {
         // Arrange
         var services = new ServiceCollection();
         var builder = services.AddControllers();
 
         // Act
-        builder.AddContractWatcherFilter();
+        builder.AddContractWatcher();
 
         // Assert
         Assert.Contains(services, descriptor => 
@@ -48,23 +48,25 @@ public sealed class ContractWatcherMvcExtensionsTests
     }
 
     [Fact]
-    public void AddContractWatcherFilter_AddsFilterToMvcOptions()
+    public void AddContractWatcher_AddsFilterToMvcOptions()
     {
         // Arrange
         var services = new ServiceCollection();
 
         services
             .AddControllers()
-            .AddContractWatcherFilter();
+            .AddContractWatcher();
 
         using var serviceProvider = services.BuildServiceProvider();
+
         var options = serviceProvider
-            .GetRequiredService<Microsoft.Extensions.Options.IOptions<MvcOptions>>().Value;
+            .GetRequiredService<Microsoft.Extensions.Options.IOptions<MvcOptions>>()
+            .Value;
 
         // Act
         var registration = options.Filters
             .OfType<ServiceFilterAttribute>()
-            .SingleOrDefault(x => x.ServiceType == typeof(ContractWatcherResourceFilter));
+            .SingleOrDefault(filter => filter.ServiceType == typeof(ContractWatcherResourceFilter));
 
         // Assert
         Assert.NotNull(registration);

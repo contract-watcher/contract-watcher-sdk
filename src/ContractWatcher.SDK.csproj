@@ -23,6 +23,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="ContractWatcher.SDK.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
       <PackageReference Include="ContractWatcher.Common" Version="1.2.0" />
     </ItemGroup>
 

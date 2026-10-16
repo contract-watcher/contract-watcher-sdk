@@ -6,7 +6,7 @@ namespace ContractWatcher.SDK.Contracts.Providers;
 /// <summary>
 /// Предоставляет опубликованные контракты из локального хранилища
 /// </summary>
-public sealed class ContractProvider : IContractProvider
+internal sealed class ContractProvider : IContractProvider
 {
     /// <summary>
     /// Хранилище полученных контрактов

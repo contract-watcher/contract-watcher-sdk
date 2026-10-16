@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace ContractWatcher.SDK.Contracts.Workers;
 
-public sealed class ContractRefreshWorker(
+internal sealed class ContractRefreshWorker(
     IContractStore contractStore,
     IContractRefresher contractRefresher,
     IOptions<ContractWatcherOptions> options,

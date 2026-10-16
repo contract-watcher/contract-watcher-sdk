@@ -7,7 +7,7 @@ namespace ContractWatcher.SDK.Reporting.Publishers;
 /// <summary>
 /// Публикует отчёты проверки в ContractWatcher Core
 /// </summary>
-public sealed class CoreReportPublisher(IContractWatcherCoreClient coreClient) : IReportPublisher
+internal sealed class CoreReportPublisher(IContractWatcherCoreClient coreClient) : IReportPublisher
 {
     public Task PublishAsync(ValidationReport report, CancellationToken cancellationToken = default)
     {

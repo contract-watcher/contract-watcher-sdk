@@ -8,7 +8,7 @@ namespace ContractWatcher.SDK.Reporting.Handlers;
 /// <summary>
 /// Определяет статус отчета на основании результата проверки
 /// </summary>
-public sealed class ReportStatusHandler : IReportBuildHandler
+internal sealed class ReportStatusHandler : IReportBuildHandler
 {
     public void Handle(ReportBuildContext context, ReportBuildDelegate next)
     {

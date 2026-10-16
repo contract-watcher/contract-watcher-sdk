@@ -3,7 +3,7 @@ namespace ContractWatcher.SDK.Core.Constants;
 /// <summary>
 /// Роуты для core-клиента
 /// </summary>
-public static class CoreRoutes
+internal static class CoreRoutes
 {
     /// <summary>
     /// Роуты для контроллера контрактов

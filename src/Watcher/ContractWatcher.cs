@@ -9,7 +9,7 @@ namespace ContractWatcher.SDK.Watcher;
 /// <summary>
 /// Выполняет явную проверку входящего JSON через основной execution pipeline SDK
 /// </summary>
-public sealed class ContractWatcher : IContractWatcher
+internal sealed class ContractWatcher : IContractWatcher
 {
     /// <summary>
     /// Execution pipeline проверки контракта

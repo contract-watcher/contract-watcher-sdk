@@ -8,7 +8,7 @@ namespace ContractWatcher.SDK.Execution.Middlewares;
 /// <summary>
 /// Публикует сформированный отчёт проверки контракта
 /// </summary>
-public sealed class ReportPublishingMiddleware(IReportPublisher reportPublisher) : IWatcherMiddleware
+internal sealed class ReportPublishingMiddleware(IReportPublisher reportPublisher) : IWatcherMiddleware
 {
     public async Task InvokeAsync(WatcherContext context, WatcherDelegate next, CancellationToken cancellationToken)
     {

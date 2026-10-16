@@ -9,7 +9,7 @@ using ContractWatcher.SDK.Core.Interfaces;
 namespace ContractWatcher.SDK.Core.Clients;
 
 /// <summary>
-/// Выполняет HTTP-запросы к ContractWatcher Core
+/// Выполняет HTTP-запросы к Core
 /// </summary>
 public class ContractWatcherCoreClient(HttpClient httpClient) : IContractWatcherCoreClient
 {

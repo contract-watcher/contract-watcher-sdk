@@ -9,7 +9,7 @@ namespace ContractWatcher.SDK.Execution.Middlewares;
 /// <summary>
 /// Выполняет локальную проверку JSON по полученному контракту контракту
 /// </summary>
-public sealed class ValidationMiddleware : IWatcherMiddleware
+internal sealed class ValidationMiddleware : IWatcherMiddleware
 {
     /// <summary>
     /// Валидатор контрактов

@@ -7,7 +7,7 @@ namespace ContractWatcher.SDK.Execution;
 /// <summary>
 /// Выполняет зарегистрированные middleware приложения в порядке их регистрации
 /// </summary>
-public sealed class ExecutionPipeline : IExecutionPipeline
+internal sealed class ExecutionPipeline : IExecutionPipeline
 {
     private readonly WatcherDelegate _pipeline;
 

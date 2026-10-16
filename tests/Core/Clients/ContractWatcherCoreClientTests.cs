@@ -72,7 +72,7 @@ public sealed class ContractWatcherCoreClientTests
     [InlineData(HttpStatusCode.InternalServerError, CoreRequestError.ServerError)]
     [InlineData(HttpStatusCode.BadGateway, CoreRequestError.ServerError)]
     [InlineData(HttpStatusCode.BadRequest, CoreRequestError.UnexpectedResponse)]
-    public async Task GetContractAsync_WhenCoreReturnsError_ThrowsExpectedCoreRequestException(HttpStatusCode statusCode, CoreRequestError expectedError)
+    internal async Task GetContractAsync_WhenCoreReturnsError_ThrowsExpectedCoreRequestException(HttpStatusCode statusCode, CoreRequestError expectedError)
     {
         // Arrange
         using var httpClient = CreateHttpClient(new HttpResponseMessage(statusCode));
@@ -154,7 +154,7 @@ public sealed class ContractWatcherCoreClientTests
     [InlineData(HttpStatusCode.InternalServerError, CoreRequestError.ServerError)]
     [InlineData(HttpStatusCode.ServiceUnavailable, CoreRequestError.ServerError)]
     [InlineData(HttpStatusCode.NotFound, CoreRequestError.UnexpectedResponse)]
-    public async Task PublishReportAsync_WhenCoreReturnsError_ThrowsExpectedCoreRequestException(HttpStatusCode statusCode, CoreRequestError expectedError)
+    internal async Task PublishReportAsync_WhenCoreReturnsError_ThrowsExpectedCoreRequestException(HttpStatusCode statusCode, CoreRequestError expectedError)
     {
         // Arrange
         var report = CreateReport();

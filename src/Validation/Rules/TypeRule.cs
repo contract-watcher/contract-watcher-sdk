@@ -10,7 +10,7 @@ namespace ContractWatcher.SDK.Validation.Rules;
 /// Проверяет соответствие типа значения поля типу, указанному в контракте
 /// </summary>
 /// <remarks>Правило применяется только к существующим полям, значение которых не равно null</remarks>
-public class TypeRule : IValidationRule
+internal class TypeRule : IValidationRule
 {
     /// <summary>
     /// Определяет, применима ли проверка типа к указанному полю

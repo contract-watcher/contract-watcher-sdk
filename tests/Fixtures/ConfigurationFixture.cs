@@ -6,27 +6,23 @@ namespace ContractWatcher.SDK.Tests.Fixtures;
 
 public static class ConfigurationFixture
 {
-    public const string CoreUrl = "https://localhost:5001/api/sdk/";
-    public const string IntegrationKey = "integration-key";
-    
+    public const string CoreUrl = "http://localhost:8080";
+    public const string IntegrationKey = "test-integration-key";
+
     public static void ConfigureOptions(ContractWatcherOptions options)
     {
         options.CoreUrl = CoreUrl;
         options.IntegrationKey = IntegrationKey;
+        options.ContractRefreshInterval = TimeSpan.FromMinutes(5);
     }
-    
-    public static IHost CreateHost(Action<ContractWatcherOptions>? configure = null)
-    {
-        return new HostBuilder()
-            .UseDefaultServiceProvider(options =>
-            {
-                options.ValidateOnBuild = true;
-                options.ValidateScopes = true;
-            })
+
+    public static IHost CreateHost(Action<ContractWatcherOptions>? configure = null) =>
+        new HostBuilder()
             .ConfigureServices(services =>
             {
-                services.AddContractWatcher(configure ?? ConfigureOptions);
+                services
+                    .AddContractWatcher(configure ?? ConfigureOptions)
+                    .AddDefaults();
             })
             .Build();
-    }
 }

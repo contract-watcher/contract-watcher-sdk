@@ -8,21 +8,42 @@ using Microsoft.Extensions.Options;
 namespace ContractWatcher.SDK.Core.Extensions;
 
 /// <summary>
-/// Содержит методы регистрации клиента ContractWatcher Core
+/// Содержит внутренние методы регистрации интеграции с Core
 /// </summary>
-public static class CoreServiceCollectionExtensions
+internal static class CoreServiceCollectionExtensions
 {
-    public static IServiceCollection AddContractWatcherCore(this IServiceCollection services)
+    internal static IServiceCollection AddContractWatcherCore(this IServiceCollection services)
     {
         if (services is null)
             throw new ArgumentNullException(nameof(services));
 
+        services
+            .AddOptions<ContractWatcherOptions>()
+            .Validate(static options =>
+                {
+                    if (!Uri.TryCreate(options.CoreUrl, UriKind.Absolute, out var uri))
+                        return false;
+
+                    return
+                        (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
+                        uri.AbsolutePath == "/" &&
+                        string.IsNullOrEmpty(uri.Query) &&
+                        string.IsNullOrEmpty(uri.Fragment);
+                },
+                $"{nameof(ContractWatcherOptions.CoreUrl)} must be a base HTTP or HTTPS URL without a path, query, or fragment.")
+            .Validate(static options => !string.IsNullOrWhiteSpace(options.IntegrationKey),
+                $"{nameof(ContractWatcherOptions.IntegrationKey)} is required.")
+            .ValidateOnStart();
+
         services.AddHttpClient<IContractWatcherCoreClient, ContractWatcherCoreClient>(
             static (serviceProvider, httpClient) =>
             {
-                var options = serviceProvider.GetRequiredService<IOptions<ContractWatcherOptions>>().Value;
+                var options = serviceProvider
+                    .GetRequiredService<IOptions<ContractWatcherOptions>>()
+                    .Value;
 
                 httpClient.BaseAddress = new Uri(options.CoreUrl);
+
                 httpClient.DefaultRequestHeaders.Add(CoreHeaders.ApiKey, options.IntegrationKey);
             });
 

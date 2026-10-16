@@ -11,7 +11,7 @@ namespace ContractWatcher.SDK.Execution.Middlewares;
 /// <summary>
 /// Разрешает опубликованный контракт перед выполнением проверки
 /// </summary>
-public sealed class ContractResolutionMiddleware : IWatcherMiddleware
+internal sealed class ContractResolutionMiddleware : IWatcherMiddleware
 {
     /// <summary>
     /// Провадер контрактов

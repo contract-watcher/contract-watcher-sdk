@@ -8,7 +8,7 @@ namespace ContractWatcher.SDK.Execution.Middlewares;
 /// <summary>
 /// Формирует отчет на основе результата проверки контракта
 /// </summary>
-public sealed class ReportMiddleware : IWatcherMiddleware
+internal sealed class ReportMiddleware : IWatcherMiddleware
 {
     private readonly IValidationReportBuilder _reportBuilder;
 

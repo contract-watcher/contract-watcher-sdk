@@ -13,7 +13,7 @@ namespace ContractWatcher.SDK.Validation.Rules;
 /// Правило применяется только к существующим полям
 /// Отсутствие поля не является нарушением данного правила и проверяется отдельно правилом required
 /// </remarks>
-public class NullableRule : IValidationRule
+internal class NullableRule : IValidationRule
 {
     /// <summary>
     /// Определяет, применима ли проверка допустимости null к указанному полю

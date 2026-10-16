@@ -7,7 +7,7 @@ namespace ContractWatcher.SDK.Contracts.Refreshers;
 /// <summary>
 /// Загружает актуальные контракты из Core и обновляет локальное хранилище
 /// </summary>
-public sealed class ContractRefresher(IContractStore contractStore, IContractWatcherCoreClient coreClient) : IContractRefresher
+internal sealed class ContractRefresher(IContractStore contractStore, IContractWatcherCoreClient coreClient) : IContractRefresher
 {
     public async Task<PublishedContract?> RefreshAsync(string slug, CancellationToken cancellationToken = default)
     {

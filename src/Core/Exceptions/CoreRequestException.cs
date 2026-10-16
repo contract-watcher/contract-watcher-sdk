@@ -6,7 +6,7 @@ namespace ContractWatcher.SDK.Core.Exceptions;
 /// <summary>
 /// Ошибка взаимодействия с Core
 /// </summary>
-public sealed class CoreRequestException : Exception
+internal sealed class CoreRequestException : Exception
 {
     public CoreRequestException(
         CoreRequestError error,
