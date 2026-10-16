@@ -8,10 +8,10 @@ public static class CoreRoutes
     /// <summary>
     /// Роуты для контроллера контрактов
     /// </summary>
-    public const string Contracts = "contracts";
+    public const string Contracts = "/api/sdk/contracts";
     
     /// <summary>
     /// Роуты для контроллера отчетов
     /// </summary>
-    public const string Reports = "reports";
+    public const string Reports = "/api/sdk/reports";
 }
