@@ -7,7 +7,7 @@ namespace ContractWatcher.SDK.Contracts.Stores;
 /// <summary>
 /// Реализует потокобезопасное in-memory хранилище опубликованных контрактов
 /// </summary>
-public sealed class InMemoryContractStore : IContractStore
+internal sealed class InMemoryContractStore : IContractStore
 {
     /// <summary>
     /// Опубликованные контракты

@@ -1,30 +1,24 @@
 using ContractWatcher.SDK.AspNetCore.Filters;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace ContractWatcher.SDK.AspNetCore.Extensions;
 
 /// <summary>
-/// Содержит методы регистрации ASP.NET Core интеграции ContractWatcher
+/// Содержит методы подключения ContractWatcher к ASP.NET Core MVC
 /// </summary>
 public static class ContractWatcherMvcExtensions
 {
     /// <summary>
-    /// Добавляет автоматическую проверку контрактов через фильтр
+    /// Добавляет автоматическую проверку endpoint-контрактов, отмеченных ContractWatcherAttribute
     /// </summary>
-    /// <param name="builder">MVC builder приложения</param>
-    /// <returns>Возвращает исходный MVC builder</returns>
-    public static IMvcBuilder AddContractWatcherFilter(this IMvcBuilder builder)
+    public static IMvcBuilder AddContractWatcher(this IMvcBuilder builder)
     {
         if (builder is null)
             throw new ArgumentNullException(nameof(builder));
 
-        builder.Services.AddLogging();
-        builder.Services.AddScoped<ContractWatcherResourceFilter>();
-
-        builder.AddMvcOptions(options =>
-        {
-            options.Filters.AddService<ContractWatcherResourceFilter>();
-        });
+        builder.Services.TryAddScoped<ContractWatcherResourceFilter>();
+        builder.AddMvcOptions(options => options.Filters.AddService<ContractWatcherResourceFilter>());
 
         return builder;
     }

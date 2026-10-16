@@ -7,7 +7,7 @@ namespace ContractWatcher.SDK.Validation;
 /// <summary>
 /// Выполняет зарегистрированные правила проверки в порядке их добавления в контейнер зависимостей
 /// </summary>
-public class ValidationPipeline : IValidationPipeline
+internal class ValidationPipeline : IValidationPipeline
 {
     private readonly IReadOnlyCollection<IValidationRule> _rules;
 

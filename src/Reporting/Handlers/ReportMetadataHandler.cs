@@ -7,7 +7,7 @@ namespace ContractWatcher.SDK.Reporting.Handlers;
 /// <summary>
 /// Добавляет общие метаданные отчета проверки
 /// </summary>
-public sealed class ReportMetadataHandler : IReportBuildHandler
+internal sealed class ReportMetadataHandler : IReportBuildHandler
 {
     private readonly TimeProvider _timeProvider;
 

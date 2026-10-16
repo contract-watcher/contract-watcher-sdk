@@ -1,3 +1,4 @@
+using ContractWatcher.SDK.Configuration.Builders;
 using ContractWatcher.SDK.Configuration.Extensions;
 using ContractWatcher.SDK.Configuration.Options;
 using ContractWatcher.SDK.Contracts.Interfaces;
@@ -18,38 +19,39 @@ public sealed class ContractWatcherServiceCollectionExtensionsTests
     [Fact]
     public void AddContractWatcher_WhenServicesIsNull_ThrowsArgumentNullException()
     {
-        // Act
-        var action = () => 
+        // Arrange
+        Action action = () => 
             ContractWatcherServiceCollectionExtensions.AddContractWatcher(null!, ConfigureOptions);
 
-        // Assert
+        // Act & Assert
         Assert.Throws<ArgumentNullException>(action);
     }
 
     [Fact]
-    public void AddContractWatcher_WhenConfigureIsNull_ThrowsArgumentNullException()
+    public void AddContractWatcher_WhenConfigureIsNull_DoesNotThrow()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        var action = () => services.AddContractWatcher(null!);
+        var exception = Record.Exception(() => services.AddContractWatcher());
 
         // Assert
-        Assert.Throws<ArgumentNullException>(action);
+        Assert.Null(exception);
     }
 
     [Fact]
-    public void AddContractWatcher_ReturnsSameServiceCollection()
+    public void AddContractWatcher_ReturnsBuilderWithSameServiceCollection()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        var result = services.AddContractWatcher(ConfigureOptions);
+        var builder = services.AddContractWatcher(ConfigureOptions);
 
         // Assert
-        Assert.Same(services, result);
+        Assert.IsType<ContractWatcherBuilder>(builder);
+        Assert.Same(services, builder.Services);
     }
 
     [Fact]
@@ -57,11 +59,15 @@ public sealed class ContractWatcherServiceCollectionExtensionsTests
     {
         // Arrange
         var services = new ServiceCollection();
+
         services.AddContractWatcher(ConfigureOptions);
+
         using var serviceProvider = services.BuildServiceProvider();
 
         // Act
-        var options = serviceProvider.GetRequiredService<IOptions<ContractWatcherOptions>>().Value;
+        var options = serviceProvider
+            .GetRequiredService<IOptions<ContractWatcherOptions>>()
+            .Value;
 
         // Assert
         Assert.Equal(CoreUrl, options.CoreUrl);
@@ -69,26 +75,45 @@ public sealed class ContractWatcherServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddContractWatcher_RegistersContractWatcher()
+    public void AddContractWatcher_RegistersContractWatcherDescriptor()
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddContractWatcher(ConfigureOptions);
-        using var serviceProvider = services.BuildServiceProvider();
 
         // Act
-        var watcher = serviceProvider.GetRequiredService<IContractWatcher>();
+        services.AddContractWatcher(ConfigureOptions);
 
         // Assert
-        Assert.IsType<SDK.Watcher.ContractWatcher>(watcher);
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IContractWatcher));
     }
 
     [Fact]
-    public void AddContractWatcher_RegistersRequiredDependencies()
+    public void AddContractWatcher_DoesNotRegisterOptionalModules()
     {
         // Arrange
         var services = new ServiceCollection();
+
+        // Act
         services.AddContractWatcher(ConfigureOptions);
+
+        // Assert
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IContractStore));
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IContractProvider));
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IContractValidator));
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IValidationReportBuilder));
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IExecutionPipeline));
+    }
+
+    [Fact]
+    public void AddDefaults_RegistersRequiredDependencies()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        services
+            .AddContractWatcher(ConfigureOptions)
+            .AddDefaults();
+
         using var serviceProvider = services.BuildServiceProvider();
 
         // Act
@@ -107,7 +132,7 @@ public sealed class ContractWatcherServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddContractWatcher_WhenCalledTwice_DoesNotDuplicateMainServices()
+    public void AddContractWatcher_WhenCalledTwice_DoesNotDuplicateRootServices()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -117,11 +142,26 @@ public sealed class ContractWatcherServiceCollectionExtensionsTests
         services.AddContractWatcher(ConfigureOptions);
 
         // Assert
-        Assert.Single(services, x => x.ServiceType == typeof(IContractWatcher));
-        Assert.Single(services, x => x.ServiceType == typeof(IContractStore));
-        Assert.Single(services, x => x.ServiceType == typeof(IContractProvider));
-        Assert.Single(services, x => x.ServiceType == typeof(IContractValidator));
-        Assert.Single(services, x => x.ServiceType == typeof(IValidationReportBuilder));
-        Assert.Single(services, x => x.ServiceType == typeof(IExecutionPipeline));
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IContractWatcher));
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(TimeProvider));
+    }
+
+    [Fact]
+    public void AddDefaults_RegistersAllMainModules()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        // Act
+        services
+            .AddContractWatcher(ConfigureOptions)
+            .AddDefaults();
+
+        // Assert
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IContractStore));
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IContractProvider));
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IContractValidator));
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IValidationReportBuilder));
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IExecutionPipeline));
     }
 }

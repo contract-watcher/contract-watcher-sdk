@@ -27,7 +27,7 @@ public static class ValidationFixture
             ActualType = actualType
         };
     
-    public static ValidationReportBuilder CreateValidationReportBuilder()
+    internal static ValidationReportBuilder CreateValidationReportBuilder()
     {
         IReportBuildHandler[] handlers =
         [

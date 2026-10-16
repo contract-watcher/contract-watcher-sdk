@@ -9,7 +9,7 @@ namespace ContractWatcher.SDK.Reporting.Builders;
 /// <summary>
 /// Формирует отчет проверки, последовательно выполняя зарегистрированные обработчики
 /// </summary>
-public sealed class ValidationReportBuilder : IValidationReportBuilder
+internal sealed class ValidationReportBuilder : IValidationReportBuilder
 {
     /// <summary>
     /// Цепочка формирования отчета

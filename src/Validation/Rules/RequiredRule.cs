@@ -9,7 +9,7 @@ namespace ContractWatcher.SDK.Validation.Rules;
 /// Проверяет наличие обязательного поля во входящем JSON
 /// </summary>
 /// <remarks>Правило применяется только к полям, помеченным как обязательные</remarks>
-public class RequiredRule : IValidationRule
+internal class RequiredRule : IValidationRule
 {
     /// <summary>
     /// Определяет, необходимо ли применять проверку обязательности к указанному полю

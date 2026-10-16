@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ContractWatcher.SDK.Execution.Middlewares;
 
-public sealed class TechnicalErrorMiddleware(ILogger<TechnicalErrorMiddleware> logger) : IWatcherMiddleware
+internal sealed class TechnicalErrorMiddleware(ILogger<TechnicalErrorMiddleware> logger) : IWatcherMiddleware
 {
     public async Task InvokeAsync(WatcherContext context, WatcherDelegate next, CancellationToken cancellationToken)
     {

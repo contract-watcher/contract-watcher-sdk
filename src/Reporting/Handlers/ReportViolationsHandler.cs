@@ -7,7 +7,7 @@ namespace ContractWatcher.SDK.Reporting.Handlers;
 /// <summary>
 /// Добавляет нарушения контракта в неуспешный отчет проверки
 /// </summary>
-public sealed class ReportViolationsHandler : IReportBuildHandler
+internal sealed class ReportViolationsHandler : IReportBuildHandler
 {
     public void Handle(ReportBuildContext context, ReportBuildDelegate next)
     {

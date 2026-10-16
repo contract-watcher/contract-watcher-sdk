@@ -8,7 +8,7 @@ namespace ContractWatcher.SDK.Validation;
 /// <summary>
 /// Выполняет локальную проверку входящего JSON согласно правилам опубликованного контракта
 /// </summary>
-public sealed class ContractValidator : IContractValidator
+internal sealed class ContractValidator : IContractValidator
 {
     private readonly IValidationPipeline _pipeline;
 

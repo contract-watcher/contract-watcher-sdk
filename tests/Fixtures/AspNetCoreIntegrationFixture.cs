@@ -27,17 +27,13 @@ public static class AspNetCoreIntegrationFixture
                     services
                         .AddControllers()
                         .AddApplicationPart(typeof(ContractWatcherTestController).Assembly)
-                        .AddContractWatcherFilter();
+                        .AddContractWatcher();
                 });
 
                 webBuilder.Configure(app =>
                 {
                     app.UseRouting();
-
-                    app.UseEndpoints(endpoints =>
-                    {
-                        endpoints.MapControllers();
-                    });
+                    app.UseEndpoints(endpoints => endpoints.MapControllers());
                 });
             });
 
