@@ -49,8 +49,7 @@ internal sealed class ValidationReportBuilder : IValidationReportBuilder
             ReportId = context.ReportId,
             ContractVersion = contract.ContractVersion,
             Status = context.Status.Value,
-            // TODO: раскомментировать после обновления ContractWatcher.Common
-            // Timestamp = context.Timestamp, 
+            Timestamp = context.Timestamp, 
             Violations = context.Violations
         };
     }
