@@ -5,7 +5,7 @@ namespace ContractWatcher.SDK.Scanning.Models;
 /// <summary>
 /// Описывает MVC action, для которого необходимо сформировать контракт.
 /// </summary>
-internal sealed class DiscoveredEndpoint
+public sealed class DiscoveredEndpoint
 {
     /// <summary>
     /// Уникальное имя контракта из ContractWatcherAttribute.

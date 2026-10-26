@@ -3,14 +3,17 @@ using ContractWatcher.Common.Contracts;
 namespace ContractWatcher.SDK.Scanning.Interfaces;
 
 /// <summary>
-/// Координирует автоматическое формирование контрактов приложения.
+/// Выполняет модули сканирования с повтором упавшего этапа.
 /// </summary>
-internal interface IContractScanner
+public interface IContractScanner
 {
     /// <summary>
-    /// Обнаруживает endpoints и формирует их контракты.
+    /// Создаёт новый контекст и выполняет один проход пайплайна.
     /// </summary>
-    /// <param name="cancellationToken">Токен отмены сканирования.</param>
-    /// <returns>Контракты обнаруженных endpoints.</returns>
-    IReadOnlyCollection<PublishedContract> Scan(CancellationToken cancellationToken = default);
+    /// <remarks>
+    /// Однократный автоматический запуск обеспечивает startup worker.
+    /// Явный повторный вызов этого метода запускает новый проход.
+    /// </remarks>
+    Task<IReadOnlyCollection<PublishedContract>> ScanAsync(
+        CancellationToken cancellationToken = default);
 }

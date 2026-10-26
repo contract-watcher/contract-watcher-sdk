@@ -1,21 +1,67 @@
 using System.Text.Json.Nodes;
 using ContractWatcher.Common.Contracts;
 using ContractWatcher.Common.Enums;
+using ContractWatcher.SDK.Scanning.Enums;
 using ContractWatcher.SDK.Scanning.Interfaces;
+using ContractWatcher.SDK.Scanning.Models;
 using ContractWatcher.SDK.Scanning.Schemas;
 
-namespace ContractWatcher.SDK.Scanning.Mappings;
+namespace ContractWatcher.SDK.Scanning.Modules;
 
 /// <summary>
-/// Преобразует свойства корневой JSON Schema в правила ContractWatcher.
+/// Преобразует схемы в контракты с правилами верхнего уровня.
 /// </summary>
 /// <remarks>
-/// Объекты и массивы описываются только типом, required и nullable.
-/// Ограничения enum, format, длины и диапазоны в ContractRule не переносятся.
+/// Вложенные объекты и массивы описываются только типом,
+/// обязательностью и допустимостью null.
 /// </remarks>
-internal sealed class ContractMapper : IContractMapper
+public sealed class ContractMappingModule : IScanningModule
 {
-    public PublishedContract Map(string slug, int version, JsonNode schema)
+    public ScanningStage Stage => ScanningStage.Mapping;
+    
+    public Task ExecuteAsync(ScanningContext context, CancellationToken cancellationToken)
+    {
+        if (context is null)
+            throw new ArgumentNullException(nameof(context));
+        
+        if (cancellationToken.IsCancellationRequested)
+            throw new OperationCanceledException();
+
+        var endpoints = context.Endpoints ??
+            throw new InvalidOperationException("Endpoint discovery must complete before mapping.");
+
+        var schemas = context.Schemas ??
+            throw new InvalidOperationException("Schema generation must complete before mapping.");
+
+        var contracts = new List<PublishedContract>(endpoints.Count);
+
+        foreach (var endpoint in endpoints)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException();
+
+            context.CurrentItem = endpoint.Slug;
+
+            if (!schemas.TryGetValue(endpoint.RequestType, out var schema))
+                throw new InvalidOperationException($"Schema for '{endpoint.RequestType}' was not generated.");
+
+            // TODO: согласовать назначение версии с Core
+            // Повтор этапа не должен сам увеличивать версию.
+            contracts.Add(Map(endpoint.Slug, version: 1, schema: schema));
+        }
+
+        if (cancellationToken.IsCancellationRequested)
+            throw new OperationCanceledException();
+
+        context.Contracts = contracts.ToArray();
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Формирует контракт из свойств корневой схемы.
+    /// </summary>
+    private static PublishedContract Map(string slug, int version, JsonNode schema)
     {
         if (string.IsNullOrWhiteSpace(slug))
             throw new ArgumentException("Contract slug is required.", nameof(slug));
@@ -41,7 +87,8 @@ internal sealed class ContractMapper : IContractMapper
                 if (property.Value is null)
                     throw new NotSupportedException($"Property '{slug}.{property.Key}' has no schema.");
 
-                var propertySchema = JsonSchemaReferenceResolver.Resolve(property.Value, schema);
+                var propertySchema = 
+                    JsonSchemaReferenceResolver.Resolve(property.Value, schema);
 
                 var fieldType = GetFieldType(propertySchema, $"{slug}.{property.Key}");
 
@@ -85,7 +132,6 @@ internal sealed class ContractMapper : IContractMapper
     /// <remarks>
     /// Null обрабатывается отдельно.
     /// Integer и number объединяются в ContractFieldType.Number.
-    /// Неоднозначные и неограниченные схемы явно отклоняются.
     /// </remarks>
     private static ContractFieldType GetFieldType(JsonNode schema, string fieldName)
     {
@@ -103,7 +149,8 @@ internal sealed class ContractMapper : IContractMapper
             .ToArray();
 
         if (types.Length != 1)
-            throw new NotSupportedException($"Schema for '{fieldName}' must have one supported non-null type.");
+            throw new NotSupportedException(
+                $"Schema for '{fieldName}' must have one supported non-null type.");
 
         return types[0];
     }
