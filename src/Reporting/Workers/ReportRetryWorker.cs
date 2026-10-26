@@ -58,7 +58,8 @@ internal sealed class ReportRetryWorker(
 
         foreach (var id in ids)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException();
 
             try
             {

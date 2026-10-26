@@ -6,7 +6,10 @@ using ContractWatcher.SDK.Core.Interfaces;
 using ContractWatcher.SDK.Data.Domain;
 using ContractWatcher.SDK.Data.Enums;
 using ContractWatcher.SDK.Data.Mappings;
+using ContractWatcher.SDK.Reporting.Workers;
 using ContractWatcher.SDK.Tests.Fixtures;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 
@@ -390,6 +393,58 @@ public sealed class ReportRetryWorkerTests : IDisposable
         // Assert
         Assert.Equal(1, removed);
         Assert.Empty(session.Context.ReportRetries);
+    }
+    
+    [Fact]
+    public async Task RunOnceAsync_WhenCanceledBetweenReports_DoesNotSendNextReport()
+    {
+        // Arrange
+        using var session = Open();
+        using var cancellation = new CancellationTokenSource();
+    
+        var first = CreateReport().ToEntity(_clock.GetUtcNow());
+        var second = CreateReport().ToEntity(_clock.GetUtcNow().AddSeconds(1));
+    
+        session.Context.Reports.Add(first);
+        session.Context.Reports.Add(second);
+    
+        await session.Context.SaveChangesAsync();
+    
+        _client
+            .Setup(client => client.PublishReportAsync(It.IsAny<ValidationReport>(), cancellation.Token))
+            .ThrowsAsync(new InvalidOperationException("Rejected"));
+    
+        var logger = new Mock<ILogger<ReportRetryWorker>>();
+    
+        // Отменяем выполнение после обработки ошибки первого отчёта,
+        // чтобы следующий отчёт встретил отмену перед отправкой.
+        logger
+            .Setup(value => value.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+            .Callback(new InvocationAction(_ => cancellation.Cancel()));
+    
+        using var worker = new ReportRetryWorker(
+            session.Delivery, Options.Create(session.Settings), _clock, logger.Object);
+    
+        // Act
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => worker.RunOnceAsync(cancellation.Token));
+    
+        // Assert
+        Assert.Equal(ReportDeliveryState.Failed, first.DeliveryState);
+        Assert.Equal(ReportDeliveryState.Pending, second.DeliveryState);
+        Assert.Null(session.Context.ReportRetries.Find(second.ReportId));
+    
+        _client.Verify(client => client.PublishReportAsync(
+            It.Is<ValidationReport>(report => report.ReportId == first.ReportId), cancellation.Token), Times.Once);
+    
+        _client.Verify(client => client.PublishReportAsync(
+            It.Is<ValidationReport>(report => report.ReportId == second.ReportId),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     public void Dispose() => _fixture.Dispose();
