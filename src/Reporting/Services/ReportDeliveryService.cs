@@ -132,7 +132,9 @@ internal sealed class ReportDeliveryService(
 
                 var retry = db.ReportRetries.Find(reportId);
 
-                if (retry is not null && (retry.NextAttemptAt is null || retry.NextAttemptAt > clock.GetUtcNow()))
+                if (retry is not null &&
+                    (retry.NextAttemptAt is not { } nextAttemptAt ||
+                     nextAttemptAt > clock.GetUtcNow()))
                     return null;
 
                 return entity.ToDto();

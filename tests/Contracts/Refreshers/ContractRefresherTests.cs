@@ -58,7 +58,8 @@ public sealed class ContractRefresherTests
         var store = new Mock<IContractStore>();
         var coreClient = new Mock<IContractWatcherCoreClient>();
 
-        coreClient.Setup(x => x.GetContractAsync("products", It.IsAny<CancellationToken>()))
+        coreClient.Setup(x => 
+                x.GetContractAsync("products", It.IsAny<CancellationToken>()))
             .ReturnsAsync((PublishedContract?)null);
 
         var refresher = new ContractRefresher(store.Object, coreClient.Object);
@@ -68,7 +69,8 @@ public sealed class ContractRefresherTests
 
         // Assert
         Assert.Null(result);
-        store.Verify(x => x.Set(It.IsAny<PublishedContract>()), Times.Never);
+        store.Verify(x => 
+            x.SetAsync(It.IsAny<PublishedContract>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -89,6 +91,6 @@ public sealed class ContractRefresherTests
 
         // Assert
         Assert.Same(contract, result);
-        store.Verify(x => x.Set(contract), Times.Once);
+        store.Verify(x => x.SetAsync(contract, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

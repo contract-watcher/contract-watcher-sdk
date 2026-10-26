@@ -55,7 +55,11 @@ internal sealed class TrackedCollection<T> : ObservableCollection<T>, IEntityCha
     {
         var current = new HashSet<T>(this, ReferenceEqualityComparer.Instance);
 
-        foreach (var item in _subscriptions.Where(item => !current.Contains(item)).ToArray())
+        var removed = _subscriptions
+            .Where(item => !current.Contains(item))
+            .ToArray();
+
+        foreach (var item in removed)
         {
             item.Changed -= OnItemChanged;
             _subscriptions.Remove(item);
