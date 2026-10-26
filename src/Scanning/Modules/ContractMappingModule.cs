@@ -47,7 +47,7 @@ public sealed class ContractMappingModule : IScanningModule
 
             // TODO: согласовать назначение версии с Core
             // Повтор этапа не должен сам увеличивать версию.
-            contracts.Add(Map(endpoint.Slug, version: 1, schema: schema));
+            contracts.Add(Map(endpoint.Slug, schema: schema));
         }
 
         if (cancellationToken.IsCancellationRequested)
@@ -61,13 +61,10 @@ public sealed class ContractMappingModule : IScanningModule
     /// <summary>
     /// Формирует контракт из свойств корневой схемы.
     /// </summary>
-    private static PublishedContract Map(string slug, int version, JsonNode schema)
+    private static PublishedContract Map(string slug, JsonNode schema)
     {
         if (string.IsNullOrWhiteSpace(slug))
             throw new ArgumentException("Contract slug is required.", nameof(slug));
-
-        if (version <= 0)
-            throw new ArgumentOutOfRangeException(nameof(version));
 
         if (schema is null)
             throw new ArgumentNullException(nameof(schema));
@@ -105,7 +102,7 @@ public sealed class ContractMappingModule : IScanningModule
         return new PublishedContract
         {
             Slug = slug,
-            ContractVersion = version,
+            ContractVersion = 1,
             Rules = rules.ToArray()
         };
     }
