@@ -1,64 +1,48 @@
-using System.Text.Json;
-using ContractWatcher.MicroDb.Options;
-using ContractWatcher.SDK.Configuration.Builders;
+using ContractWatcher.SDK.Configuration.Options;
+using ContractWatcher.SDK.Data.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace ContractWatcher.SDK.Data.Extensions;
 
 /// <summary>
-/// Содержит методы подключения локального хранилища SDK.
+/// Регистрирует общую базу, используемую стандартными модулями SDK.
 /// </summary>
-internal static class PersistenceBuilderExtensions
+internal static class PersistenceServiceCollectionExtensions
 {
     /// <summary>
-    /// Регистрирует контекст MicroDb с событийным
-    /// отслеживанием изменений сущностей.
+    /// Добавляет единый контекст и согласованный доступ
+    /// к tracked-сущностям.
     /// </summary>
-    /// <param name="builder">Builder конфигурации SDK.</param>
-    /// <param name="options">Директория базы и параметры JSON-сериализации.</param>
-    /// <returns>Исходный builder для продолжения настройки SDK.</returns>
+    /// <param name="services">Коллекция сервисов SDK.</param>
     /// <remarks>
-    /// <para>
-    /// Контекст регистрируется как singleton: сервисы SDK используют один экземпляр базы.
-    /// </para>
-    /// <para>
-    /// Настройки копируются при регистрации.
-    /// Последующие изменения исходных настроек сериализации не влияют на создаваемый контекст.
-    /// </para>
-    /// <para>
-    /// Метод регистрирует контекст.
-    /// Существующие реализации хранилища контрактов и publisher автоматически не заменяются.
-    /// </para>
+    /// Повторные вызовы из модулей контрактов и отчётов
+    /// не создают новые контексты.
     /// </remarks>
-    /// <exception cref="ArgumentNullException">
-    /// Builder, настройки или параметры сериализации равны null.
-    /// </exception>
-    /// <exception cref="ArgumentException">
-    /// Путь к директории пуст или содержит только пробельные символы.
-    /// </exception>
-    internal static ContractWatcherBuilder AddMicroDb(this ContractWatcherBuilder builder, MicroDbOptions options)
+    internal static IServiceCollection AddContractWatcherPersistence(this IServiceCollection services)
     {
-        if (builder is null)
-            throw new ArgumentNullException(nameof(builder));
-        
-        if (options is null)
-            throw new ArgumentNullException(nameof(options));
-        
-        if (string.IsNullOrWhiteSpace(options.DirectoryPath))
-            throw new ArgumentNullException(nameof(options.DirectoryPath));
-        
-        if (options.JsonSerializerOptions is null)
-            throw new ArgumentNullException(nameof(options.JsonSerializerOptions));
+        services
+            .AddOptions<ContractWatcherOptions>()
+            .Validate(
+                options =>
+                    options.Database is not null &&
+                    !string.IsNullOrWhiteSpace(options.Database.DirectoryPath) &&
+                    options.Database.JsonSerializerOptions is not null,
+                "Database directory and serializer options are required.")
+            .ValidateOnStart();
 
-        var snapshot = new MicroDbOptions
+        services.TryAddSingleton<ContractWatcherDbContext>(provider =>
         {
-            DirectoryPath = Path.GetFullPath(options.DirectoryPath),
-            JsonSerializerOptions = new JsonSerializerOptions(options.JsonSerializerOptions)
-        };
+            var options = provider
+                .GetRequiredService<IOptions<ContractWatcherOptions>>()
+                .Value;
 
-        builder.Services.TryAddSingleton<ContractWatcherDbContext>(
-            _ => new ContractWatcherDbContext(snapshot));
+            return new ContractWatcherDbContext(options.Database);
+        });
 
-        return builder;
+        services.TryAddSingleton<DatabaseAccess>();
+
+        return services;
     }
 }

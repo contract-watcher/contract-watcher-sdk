@@ -53,7 +53,7 @@ public static class ContractWatcherBuilderExtensions
         return builder.AddContracts(contracts =>
         {
             contracts
-                .UseInMemoryStore()
+                .UseMicroDbStore()
                 .UseCoreRefresher()
                 .UseDefaultProvider()
                 .AddRefreshWorker();

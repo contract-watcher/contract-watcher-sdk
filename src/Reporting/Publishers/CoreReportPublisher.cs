@@ -1,19 +1,17 @@
 using ContractWatcher.Common.Contracts;
-using ContractWatcher.SDK.Core.Interfaces;
 using ContractWatcher.SDK.Reporting.Interfaces;
+using ContractWatcher.SDK.Reporting.Services;
 
 namespace ContractWatcher.SDK.Reporting.Publishers;
 
 /// <summary>
-/// Публикует отчёты проверки в ContractWatcher Core
+/// Сохраняет отчёт в MicroDb и инициирует отправку с последующим фоновым повтором.
 /// </summary>
-internal sealed class CoreReportPublisher(IContractWatcherCoreClient coreClient) : IReportPublisher
+/// <remarks>
+/// Успех при недоступном Core означает, что отчёт сохранён и ожидает повторной отправки.
+/// </remarks>
+internal sealed class CoreReportPublisher(ReportDeliveryService delivery) : IReportPublisher
 {
-    public Task PublishAsync(ValidationReport report, CancellationToken cancellationToken = default)
-    {
-        if (report is null)
-            throw new ArgumentNullException(nameof(report));
-
-        return coreClient.PublishReportAsync(report, cancellationToken);
-    }
+    public Task PublishAsync(ValidationReport report, CancellationToken cancellationToken = default) =>
+        delivery.PublishAsync(report, cancellationToken);
 }

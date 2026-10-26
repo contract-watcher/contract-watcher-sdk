@@ -1,6 +1,10 @@
+using ContractWatcher.SDK.Data.Extensions;
 using ContractWatcher.SDK.Reporting.Handlers;
 using ContractWatcher.SDK.Reporting.Interfaces;
+using ContractWatcher.SDK.Reporting.Options;
 using ContractWatcher.SDK.Reporting.Publishers;
+using ContractWatcher.SDK.Reporting.Services;
+using ContractWatcher.SDK.Reporting.Workers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -53,9 +57,37 @@ public sealed class ReportingModuleBuilder
     }
 
     /// <summary>
-    /// Публикует отчеты в Core
+    /// Сохраняет отчёты в MicroDb, отправляет в Core и добавляет фоновую повторную отправку.
     /// </summary>
-    public ReportingModuleBuilder UseCorePublisher() => UsePublisher<CoreReportPublisher>();
+    /// <param name="configureRetry">Необязательная настройка расписания и лимита попыток.</param>
+    public ReportingModuleBuilder UseCorePublisher(Action<ReportRetryOptions>? configureRetry = null)
+    {
+        Services.AddContractWatcherPersistence();
+
+        var options = Services.AddOptions<ReportRetryOptions>();
+
+        if (configureRetry is not null)
+            options.Configure(configureRetry);
+
+        options
+            .Validate(value =>
+                    value.PollInterval > TimeSpan.Zero &&
+                    value.PollInterval <= TimeSpan.FromDays(1),
+                "PollInterval must be within (0, 1 day].")
+            .Validate(value =>
+                    value.InitialDelay > TimeSpan.Zero &&
+                    value.MaxDelay >= value.InitialDelay &&
+                    value.MaxDelay <= TimeSpan.FromDays(365),
+                "Invalid retry delay range.")
+            .Validate(value => 
+                    value.MaxAttempts >= 0 && value.BatchSize > 0, "Invalid retry limits.")
+            .ValidateOnStart();
+
+        Services.TryAddSingleton<ReportDeliveryService>();
+        Services.AddHostedService<ReportRetryWorker>();
+
+        return UsePublisher<CoreReportPublisher>(ServiceLifetime.Singleton);
+    }
 
     /// <summary>
     /// Использует пользовательский publisher отчетов

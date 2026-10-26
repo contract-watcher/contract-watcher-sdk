@@ -44,4 +44,32 @@ internal sealed class InMemoryContractStore : IContractStore
     }
     
     public void Clear() => _contracts.Clear();
+    
+    public Task SetAsync(PublishedContract contract, CancellationToken cancellationToken = default)
+    {
+        if (cancellationToken.IsCancellationRequested)
+            throw new OperationCanceledException();
+
+        Set(contract);
+
+        return Task.CompletedTask;
+    }
+    
+    public Task<bool> RemoveAsync(string slug, CancellationToken cancellationToken = default)
+    {
+        if (cancellationToken.IsCancellationRequested)
+            throw new OperationCanceledException();
+
+        return Task.FromResult(Remove(slug));
+    }
+    
+    public Task ClearAsync(CancellationToken cancellationToken = default)
+    {
+        if (cancellationToken.IsCancellationRequested)
+            throw new OperationCanceledException();
+
+        Clear();
+
+        return Task.CompletedTask;
+    }
 }

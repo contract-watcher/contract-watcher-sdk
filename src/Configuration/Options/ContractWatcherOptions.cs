@@ -1,3 +1,5 @@
+using ContractWatcher.MicroDb.Options;
+
 namespace ContractWatcher.SDK.Configuration.Options;
 
 /// <summary>
@@ -19,4 +21,16 @@ public sealed class ContractWatcherOptions
     /// Интервал фонового обновления опубликованных контрактов
     /// </summary>
     public TimeSpan ContractRefreshInterval { get; set; } = TimeSpan.FromMinutes(5);
+    
+    /// <summary>
+    /// Настройки локальной базы контрактов, отчётов
+    /// и записей повторной отправки.
+    /// </summary>
+    /// <remarks>
+    /// Директория должна принадлежать одной интеграции и одному процессу-писателю.
+    /// </remarks>
+    public MicroDbOptions Database { get; set; } = new()
+    {
+        DirectoryPath = Path.Combine(AppContext.BaseDirectory, "data", "contract-watcher")
+    };
 }
