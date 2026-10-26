@@ -22,24 +22,23 @@ public interface IContractStore
     PublishedContract? Get(string slug);
 
     /// <summary>
-    /// Сохраняет контракт в локальном хранилище
+    /// Сохраняет новый контракт или обновляет существующий.
     /// </summary>
-    /// <remarks>
-    /// Если контракт с таким же slug уже существует, он полностью заменяется новым значением
-    /// Сравнение версий не является ответственностью хранилища
-    /// </remarks>
-    /// <param name="contract">Контракт для сохранения</param>
-    void Set(PublishedContract contract);
+    /// <param name="contract">Контракт для сохранения.</param>
+    /// <param name="cancellationToken">Токен отмены записи.</param>
+    Task SetAsync(PublishedContract contract, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Удаляет контракт из локального хранилища
+    /// Удаляет контракт и сохраняет изменение.
     /// </summary>
-    /// <param name="slug">Уникальное имя удаляемого контракта</param>
-    /// <returns>Возвращает true, если контракт существовал и был удалён; false</returns>
-    bool Remove(string slug);
+    /// <param name="slug">Уникальное имя контракта.</param>
+    /// <param name="cancellationToken">Токен отмены записи.</param>
+    /// <returns>True, если контракт существовал и был удалён.</returns>
+    Task<bool> RemoveAsync(string slug, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Удаляет все контракты из локального хранилища
+    /// Удаляет все контракты и сохраняет изменение.
     /// </summary>
-    void Clear();
+    /// <param name="cancellationToken">Токен отмены записи.</param>
+    Task ClearAsync(CancellationToken cancellationToken = default);
 }

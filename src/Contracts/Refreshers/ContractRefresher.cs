@@ -22,7 +22,7 @@ internal sealed class ContractRefresher(IContractStore contractStore, IContractW
         if (contract is null)
             return null;
 
-        contractStore.Set(contract);
+        await contractStore.SetAsync(contract, cancellationToken);
 
         return contract;
     }

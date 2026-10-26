@@ -1,3 +1,4 @@
+using ContractWatcher.MicroDb.Options;
 using ContractWatcher.SDK.Configuration.Extensions;
 using ContractWatcher.SDK.Configuration.Options;
 using Microsoft.Extensions.Hosting;
@@ -11,6 +12,11 @@ public static class ConfigurationFixture
 
     public static void ConfigureOptions(ContractWatcherOptions options)
     {
+        options.Database = new MicroDbOptions
+        {
+            DirectoryPath = Path.Combine(Path.GetTempPath(), "cw-sdk-tests", Guid.NewGuid().ToString("N"))
+        };
+
         options.CoreUrl = CoreUrl;
         options.IntegrationKey = IntegrationKey;
         options.ContractRefreshInterval = TimeSpan.FromMinutes(5);
@@ -21,7 +27,11 @@ public static class ConfigurationFixture
             .ConfigureServices(services =>
             {
                 services
-                    .AddContractWatcher(configure ?? ConfigureOptions)
+                    .AddContractWatcher(options =>
+                    {
+                        ConfigureOptions(options);
+                        configure?.Invoke(options);
+                    })
                     .AddDefaults();
             })
             .Build();

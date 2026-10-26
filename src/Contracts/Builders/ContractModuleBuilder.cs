@@ -4,6 +4,7 @@ using ContractWatcher.SDK.Contracts.Providers;
 using ContractWatcher.SDK.Contracts.Refreshers;
 using ContractWatcher.SDK.Contracts.Stores;
 using ContractWatcher.SDK.Contracts.Workers;
+using ContractWatcher.SDK.Data.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -20,9 +21,14 @@ public sealed class ContractModuleBuilder
         Services = services ?? throw new ArgumentNullException(nameof(services));
 
     /// <summary>
-    /// Использует стандартное in-memory хранилище контрактов
+    /// Использует стандартное постоянное хранилище контрактов на MicroDb.
     /// </summary>
-    public ContractModuleBuilder UseInMemoryStore() => UseStore<InMemoryContractStore>();
+    public ContractModuleBuilder UseMicroDbStore()
+    {
+        Services.AddContractWatcherPersistence();
+
+        return UseStore<MicroDbContractStore>();
+    }
 
     /// <summary>
     /// Использует стандартный provider контрактов
@@ -32,8 +38,7 @@ public sealed class ContractModuleBuilder
     /// <summary>
     /// Использует стандартный механизм обновления контрактов через Core
     /// </summary>
-    public ContractModuleBuilder UseCoreRefresher() =>
-        UseRefresher<ContractRefresher>();
+    public ContractModuleBuilder UseCoreRefresher() => UseRefresher<ContractRefresher>();
 
     /// <summary>
     /// Использует пользовательское хранилище контрактов

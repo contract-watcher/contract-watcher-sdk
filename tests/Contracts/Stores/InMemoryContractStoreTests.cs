@@ -206,4 +206,57 @@ public sealed class InMemoryContractStoreTests
         Assert.Contains("products", result);
         Assert.Contains("customers", result);
     }
+    
+    [Fact]
+    public async Task AsyncMethods_WhenNotCanceled_StoreRemoveAndClearContracts()
+    {
+        // Arrange
+        var store = new InMemoryContractStore();
+        var products = CreateContract(slug: "products");
+        var customers = CreateContract(slug: "customers");
+
+        // Act
+        await store.SetAsync(products);
+        await store.SetAsync(customers);
+
+        // Assert
+        Assert.Same(products, store.Get("products"));
+        Assert.Same(customers, store.Get("customers"));
+        Assert.True(await store.RemoveAsync("products"));
+        Assert.False(await store.RemoveAsync("products"));
+        Assert.Null(store.Get("products"));
+
+        await store.ClearAsync();
+
+        Assert.Empty(store.GetSlugs());
+    }
+
+    [Theory]
+    [InlineData("set")]
+    [InlineData("remove")]
+    [InlineData("clear")]
+    public async Task AsyncMethods_WhenCanceled_DoNotChangeStore(string operation)
+    {
+        // Arrange
+        var store = new InMemoryContractStore();
+        var original = CreateContract(version: 1);
+        store.Set(original);
+
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        // Act
+        Func<Task> action = operation switch
+        {
+            "set" => () => store.SetAsync(CreateContract(version: 2), cancellation.Token),
+            "remove" => () => store.RemoveAsync(original.Slug, cancellation.Token),
+
+            _ => () => store.ClearAsync(cancellation.Token)
+        };
+
+        // Assert
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(action);
+        Assert.Same(original, store.Get(original.Slug));
+        Assert.Single(store.GetSlugs());
+    }
 }

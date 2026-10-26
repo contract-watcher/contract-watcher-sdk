@@ -7,6 +7,12 @@
         "requested": "[1.3.0, )",
         "resolved": "1.3.0",
         "contentHash": "HDDAMZlPgCTfIyHxnzRDtliRAR0VgY11sdxFBR7NogWvZOPxOvgSSGQ6ZCuCkLY/NVsivSZpFYvRHiLKL+Um2w=="
+      },
+      "ContractWatcher.MicroDb": {
+        "type": "Direct",
+        "requested": "[1.1.0, )",
+        "resolved": "1.1.0",
+        "contentHash": "qmHC99UO32VaW/a7R8kLu3zulveSH/LcPN5hXSG3vbwBjFKx4GHeG59ZI53OaHCDK6EPtvta31y/EOU/MxOFFw=="
       }
     }
   }

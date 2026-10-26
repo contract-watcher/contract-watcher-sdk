@@ -62,7 +62,10 @@ public class ContractWatcherCoreClient(HttpClient httpClient) : IContractWatcher
             if (response.IsSuccessStatusCode || allowedStatusCodes.Contains(response.StatusCode))
                 return response;
 
-            throw CreateException(response.StatusCode);
+            var exception = CreateException(response.StatusCode);
+            response.Dispose();
+
+            throw exception;
         }
         catch (OperationCanceledException exception)when (!cancellationToken.IsCancellationRequested)
         {
