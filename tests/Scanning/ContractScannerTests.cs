@@ -5,6 +5,7 @@ using ContractWatcher.SDK.Scanning.Models;
 
 // Fixtures
 using static ContractWatcher.SDK.Tests.Fixtures.ScanningFixture;
+// ReSharper disable AccessToModifiedClosure
 
 namespace ContractWatcher.SDK.Tests.Scanning;
 
@@ -259,6 +260,7 @@ public sealed class ContractScannerTests
             new TestModule(ScanningStage.Schema, (_, _) =>
             {
                 attempts++;
+                // ReSharper disable once AccessToDisposedClosure
                 cancellation.Cancel();
 
                 return Task.CompletedTask;
@@ -302,6 +304,7 @@ public sealed class ContractScannerTests
 
         IEnumerable<IScanningModule> Modules()
         {
+            // ReSharper disable once AccessToDisposedClosure
             if (beforeModule)
                 cancellation.Cancel();
 
@@ -315,6 +318,7 @@ public sealed class ContractScannerTests
                     return Task.CompletedTask;
                 });
 
+            // ReSharper disable once AccessToDisposedClosure
             if (!beforeModule)
                 cancellation.Cancel();
         }

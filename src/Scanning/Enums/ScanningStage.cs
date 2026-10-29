@@ -9,6 +9,11 @@ public enum ScanningStage
     /// Поиск endpoints и определение request DTO.
     /// </summary>
     Discovery,
+    
+    /// <summary>
+    /// Получение опубликованного состояния до генерации и сравнения схем.
+    /// </summary>
+    Synchronization,
 
     /// <summary>
     /// Генерация JSON Schema.

@@ -3,6 +3,7 @@ using ContractWatcher.SDK.AspNetCore.Attributes;
 using ContractWatcher.SDK.Scanning.Enums;
 using ContractWatcher.SDK.Scanning.Interfaces;
 using ContractWatcher.SDK.Scanning.Models;
+using Microsoft.AspNetCore.Mvc.ActionConstraints;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -46,15 +47,33 @@ public sealed class EndpointDiscoveryModule(IActionDescriptorCollectionProvider 
             context.CurrentItem = action.MethodInfo.Name;
 
             var slug = attribute.ContractSlug;
-
             var requestType = GetRequestType(action);
+            
+            var route = new DiscoveredRoute
+            {
+                Template = action.AttributeRouteInfo?.Template,
+                HttpMethods = (action.ActionConstraints ?? [])
+                    .OfType<HttpMethodActionConstraint>()
+                    .SelectMany(constraint => constraint.HttpMethods)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(method => method, StringComparer.OrdinalIgnoreCase)
+                    .ToArray()
+            };
 
             if (endpoints.TryGetValue(slug, out var existing))
             {
-                // Несколько маршрутов одного action не создают
-                // несколько одинаковых контрактов.
                 if (existing.Method.Equals(action.MethodInfo) && existing.RequestType == requestType)
+                {
+                    endpoints[slug] = new DiscoveredEndpoint
+                    {
+                        Slug = existing.Slug,
+                        Method = existing.Method,
+                        RequestType = existing.RequestType,
+                        Routes = existing.Routes.Append(route).ToArray()
+                    };
+
                     continue;
+                }
 
                 throw new InvalidOperationException(
                     $"Contract slug '{slug}' is used by multiple actions or incompatible request models.");
@@ -64,7 +83,8 @@ public sealed class EndpointDiscoveryModule(IActionDescriptorCollectionProvider 
             {
                 Slug = slug,
                 Method = action.MethodInfo,
-                RequestType = requestType
+                RequestType = requestType,
+                Routes = [route]
             });
         }
 

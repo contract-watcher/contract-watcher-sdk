@@ -248,9 +248,11 @@ public sealed class InMemoryContractStoreTests
         // Act
         Func<Task> action = operation switch
         {
+            // ReSharper disable once AccessToDisposedClosure
             "set" => () => store.SetAsync(CreateContract(version: 2), cancellation.Token),
+            // ReSharper disable once AccessToDisposedClosure
             "remove" => () => store.RemoveAsync(original.Slug, cancellation.Token),
-
+            // ReSharper disable once AccessToDisposedClosure
             _ => () => store.ClearAsync(cancellation.Token)
         };
 

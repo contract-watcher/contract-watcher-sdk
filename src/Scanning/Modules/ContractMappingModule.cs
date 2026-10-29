@@ -1,6 +1,8 @@
 using System.Text.Json.Nodes;
 using ContractWatcher.Common.Contracts;
 using ContractWatcher.Common.Enums;
+using ContractWatcher.SDK.Contracts.Comparers;
+using ContractWatcher.SDK.Contracts.Models;
 using ContractWatcher.SDK.Scanning.Enums;
 using ContractWatcher.SDK.Scanning.Interfaces;
 using ContractWatcher.SDK.Scanning.Models;
@@ -23,17 +25,21 @@ public sealed class ContractMappingModule : IScanningModule
     {
         if (context is null)
             throw new ArgumentNullException(nameof(context));
-        
+
         if (cancellationToken.IsCancellationRequested)
             throw new OperationCanceledException();
 
-        var endpoints = context.Endpoints ??
-            throw new InvalidOperationException("Endpoint discovery must complete before mapping.");
+        var endpoints = context.Endpoints 
+            ?? throw new InvalidOperationException("Endpoint discovery must complete before mapping.");
 
-        var schemas = context.Schemas ??
-            throw new InvalidOperationException("Schema generation must complete before mapping.");
+        var schemas = context.Schemas
+            ?? throw new InvalidOperationException("Schema generation must complete before mapping.");
 
-        var contracts = new List<PublishedContract>(endpoints.Count);
+        var refreshed = (context.RefreshedContracts
+            ?? throw new InvalidOperationException("Contract synchronization must complete before mapping."))
+            .ToDictionary(result => result.Slug, StringComparer.Ordinal);
+
+        var results = new List<ContractMappingResult>(endpoints.Count);
 
         foreach (var endpoint in endpoints)
         {
@@ -45,15 +51,23 @@ public sealed class ContractMappingModule : IScanningModule
             if (!schemas.TryGetValue(endpoint.RequestType, out var schema))
                 throw new InvalidOperationException($"Schema for '{endpoint.RequestType}' was not generated.");
 
-            // TODO: согласовать назначение версии с Core
-            // Повтор этапа не должен сам увеличивать версию.
-            contracts.Add(Map(endpoint.Slug, schema: schema));
+            var rules = MapRules(endpoint.Slug, schema);
+
+            if (!refreshed.TryGetValue(endpoint.Slug, out var refresh))
+                throw new InvalidOperationException($"Refresh result for '{endpoint.Slug}' is missing.");
+
+            results.Add(Resolve(context, endpoint.Slug, rules, refresh));
         }
 
         if (cancellationToken.IsCancellationRequested)
             throw new OperationCanceledException();
 
-        context.Contracts = contracts.ToArray();
+        context.MappingResults = results.ToArray();
+
+        context.Contracts = results
+            .Where(result => result.Contract is not null)
+            .Select(result => result.Contract!)
+            .ToArray();
 
         return Task.CompletedTask;
     }
@@ -61,7 +75,10 @@ public sealed class ContractMappingModule : IScanningModule
     /// <summary>
     /// Формирует контракт из свойств корневой схемы.
     /// </summary>
-    private static PublishedContract Map(string slug, JsonNode schema)
+    /// <summary>
+    /// Формирует правила из свойств корневой схемы без назначения версии.
+    /// </summary>
+    private static IReadOnlyCollection<ContractRule> MapRules(string slug, JsonNode schema)
     {
         if (string.IsNullOrWhiteSpace(slug))
             throw new ArgumentException("Contract slug is required.", nameof(slug));
@@ -84,9 +101,7 @@ public sealed class ContractMappingModule : IScanningModule
                 if (property.Value is null)
                     throw new NotSupportedException($"Property '{slug}.{property.Key}' has no schema.");
 
-                var propertySchema = 
-                    JsonSchemaReferenceResolver.Resolve(property.Value, schema);
-
+                var propertySchema = JsonSchemaReferenceResolver.Resolve(property.Value, schema);
                 var fieldType = GetFieldType(propertySchema, $"{slug}.{property.Key}");
 
                 rules.Add(new ContractRule
@@ -99,12 +114,7 @@ public sealed class ContractMappingModule : IScanningModule
             }
         }
 
-        return new PublishedContract
-        {
-            Slug = slug,
-            ContractVersion = 1,
-            Rules = rules.ToArray()
-        };
+        return rules.ToArray();
     }
 
     /// <summary>
@@ -182,4 +192,61 @@ public sealed class ContractMappingModule : IScanningModule
 
             _ => []
         };
+    
+    /// <summary>
+    /// Выбирает содержимое и назначает версию
+    /// относительно полученного снимка Core.
+    /// </summary>
+    /// <remarks>
+    /// Повтор mapping использует тот же снимок
+    /// и не увеличивает версию повторно.
+    /// При ошибке Core новая версия не назначается.
+    /// </remarks>
+    private static ContractMappingResult Resolve(
+        ScanningContext context,
+        string slug,
+        IReadOnlyCollection<ContractRule> rules,
+        ContractRefreshResult refresh)
+    {
+        var application = context.SourcePreference == ContractSourcePreference.Application;
+
+        var published = refresh.Contract;
+
+        if (refresh.Error is not null)
+        {
+            return new ContractMappingResult
+            {
+                Slug = slug,
+                Rules = rules,
+                Contract = context.CachedContracts?.GetValueOrDefault(slug),
+                Pending = application
+            };
+        }
+
+        if (published is not null &&
+            (!StringComparer.Ordinal.Equals(slug, published.Slug) || published.ContractVersion <= 0))
+            throw new InvalidOperationException("Refresher returned an incompatible contract.");
+
+        var expectedVersion = published?.ContractVersion ?? 0;
+
+        var pending = application && 
+            (published is null || !ContractContentComparer.AreEqual(slug, rules, published));
+
+        int? targetVersion = pending ? checked(expectedVersion + 1) : null;
+
+        return new ContractMappingResult
+        {
+            Slug = slug,
+            Rules = rules,
+            ExpectedVersion = expectedVersion,
+            TargetVersion = targetVersion,
+            Pending = pending,
+            Contract = targetVersion.HasValue ? new PublishedContract
+                {
+                    Slug = slug,
+                    Rules = rules,
+                    ContractVersion = targetVersion.Value
+                } : published
+        };
+    }
 }

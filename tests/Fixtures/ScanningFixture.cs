@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
 using ContractWatcher.SDK.AspNetCore.Attributes;
+using ContractWatcher.SDK.Contracts.Models;
 using ContractWatcher.SDK.Scanning;
 using ContractWatcher.SDK.Scanning.Enums;
 using ContractWatcher.SDK.Scanning.Interfaces;
@@ -83,8 +84,27 @@ public static class ScanningFixture
         RequestType = requestType ?? typeof(Request)
     };
 
-    public static ScanningContext Context(params DiscoveredEndpoint[] endpoints) =>
-        new() { Endpoints = endpoints };
+    /// <summary>
+    /// Создаёт контекст для тестирования обработки схем.
+    /// Синхронизация считается успешно завершённой:
+    /// запрошенные контракты отсутствуют в Core.
+    /// </summary>
+    public static ScanningContext Context(
+        params DiscoveredEndpoint[] endpoints) =>
+        new()
+        {
+            Endpoints = endpoints,
+            SourcePreference = ContractSourcePreference.Application,
+            RefreshedContracts = endpoints
+                .Where(endpoint => !string.IsNullOrWhiteSpace(endpoint.Slug))
+                .Select(endpoint => new ContractRefreshResult
+                {
+                    Slug = endpoint.Slug,
+                    Contract = null,
+                    Error = null
+                })
+                .ToArray()
+        };
 
     public static ControllerActionDescriptor ActionDescriptor(string methodName, params BindingSource?[] sources)
     {

@@ -301,4 +301,25 @@ public sealed class ContractWatcherCoreClientTests
         // Assert
         await Assert.ThrowsAnyAsync<OperationCanceledException>(action);
     }
+    
+    [Fact]
+    public async Task GetContractAsync_WhenSuccessfulResponseContainsNull_RejectsResponse()
+    {
+        // Arrange
+        using var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("null", System.Text.Encoding.UTF8, "application/json")
+        };
+
+        using var httpClient = CreateHttpClient(response);
+
+        var client = new ContractWatcherCoreClient(httpClient);
+
+        // Act
+        var exception = await Assert.ThrowsAsync<CoreRequestException>(() =>
+            client.GetContractAsync("products"));
+
+        // Assert
+        Assert.Equal(CoreRequestError.UnexpectedResponse, exception.Error);
+    }
 }

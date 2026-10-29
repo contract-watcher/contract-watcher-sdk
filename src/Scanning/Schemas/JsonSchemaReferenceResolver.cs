@@ -79,6 +79,6 @@ internal static class JsonSchemaReferenceResolver
                 throw new InvalidOperationException($"Schema reference '{reference}' cannot be resolved.");
         }
 
-        return current!;
+        return current;
     }
 }

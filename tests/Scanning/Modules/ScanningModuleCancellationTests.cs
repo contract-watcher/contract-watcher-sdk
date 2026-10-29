@@ -59,6 +59,7 @@ public sealed class ScanningModuleCancellationTests
         var context = new ScanningContext
         {
             Endpoints = endpoints,
+            RefreshedContracts = [new ContractWatcher.SDK.Contracts.Models.ContractRefreshResult { Slug = "products" }],
             Schemas = new Dictionary<Type, JsonNode>
             {
                 [typeof(Request)] = JsonNode.Parse("""{"type":"object"}""")!
@@ -109,9 +110,7 @@ public sealed class ScanningModuleCancellationTests
     }
 
     private sealed class CancelingList<T>(
-        IReadOnlyList<T> items,
-        CancellationTokenSource cancellation,
-        string moment) : IReadOnlyList<T>
+        IReadOnlyList<T> items, CancellationTokenSource cancellation, string moment) : IReadOnlyList<T>
     {
         public int Count => items.Count;
 

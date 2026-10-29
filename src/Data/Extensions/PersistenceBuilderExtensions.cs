@@ -3,6 +3,7 @@ using ContractWatcher.SDK.Data.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+// ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 namespace ContractWatcher.SDK.Data.Extensions;
 

@@ -21,4 +21,9 @@ public sealed class DiscoveredEndpoint
     /// CLR-тип параметра, получаемого из тела запроса.
     /// </summary>
     public required Type RequestType { get; init; }
+    
+    /// <summary>
+    /// Маршруты action; несколько маршрутов используют один контракт.
+    /// </summary>
+    public IReadOnlyCollection<DiscoveredRoute> Routes { get; init; } = [];
 }

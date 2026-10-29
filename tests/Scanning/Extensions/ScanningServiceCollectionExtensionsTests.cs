@@ -70,6 +70,7 @@ public sealed class ScanningServiceCollectionExtensionsTests
         using var provider = services.BuildServiceProvider();
 
         // Act
+        // ReSharper disable once AccessToDisposedClosure
         var action = () => provider
             .GetRequiredService<IOptions<ScanningRetryOptions>>()
             .Value;

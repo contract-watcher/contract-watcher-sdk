@@ -193,6 +193,7 @@ public sealed class ContractWatcherDbContextTests : IDisposable
         entity.Rules.RemoveAt(0);
 
         var changes = 0;
+        // ReSharper disable once AccessToModifiedClosure
         entity.Changed += (_, _) => changes++;
 
         // Act

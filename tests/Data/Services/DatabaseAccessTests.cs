@@ -38,6 +38,7 @@ public sealed class DatabaseAccessTests
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             session.Access.WriteAsync<int>(db =>
             {
+                // ReSharper disable once AccessToDisposedClosure
                 db.Contracts.Add(CreateContract().ToEntity(fixture.Clock.GetUtcNow()));
 
                 throw new InvalidOperationException();

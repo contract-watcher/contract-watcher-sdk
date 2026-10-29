@@ -1,4 +1,5 @@
 using ContractWatcher.Common.Contracts;
+using ContractWatcher.SDK.Contracts.Models;
 
 namespace ContractWatcher.SDK.Contracts.Interfaces;
 
@@ -16,4 +17,16 @@ public interface IContractRefresher
     /// Возвращает актуальный опубликованный контракт либо null, если контракт с указанным slug отсутствует
     /// </returns>
     Task<PublishedContract?> RefreshAsync(string slug, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Обновляет набор контрактов и возвращает результат для каждого slug.
+    /// </summary>
+    /// <remarks>
+    /// Стандартный refresher сохраняет успешные ответы пакетом.
+    /// Совместимая реализация вызывает пользовательский RefreshAsync
+    /// последовательно; политика ошибок остаётся за пользовательским refresher.
+    /// </remarks>
+    Task<IReadOnlyCollection<ContractRefreshResult>> RefreshManyAsync(
+        IReadOnlyCollection<string> slugs,
+        CancellationToken cancellationToken = default);
 }

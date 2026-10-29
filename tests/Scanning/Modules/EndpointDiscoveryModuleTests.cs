@@ -1,5 +1,7 @@
 using ContractWatcher.SDK.Scanning.Models;
+using Microsoft.AspNetCore.Mvc.ActionConstraints;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.Routing;
 
 // Fixtures
 using static ContractWatcher.SDK.Tests.Fixtures.ScanningFixture;
@@ -92,9 +94,7 @@ public sealed class EndpointDiscoveryModuleTests
     public async Task ExecuteAsync_WhenNoEndpointsExist_CommitsEmptyCollection()
     {
         // Arrange
-        var module = Discovery(
-            ActionDescriptor(nameof(ScanController.Ordinary)));
-
+        var module = Discovery(ActionDescriptor(nameof(ScanController.Ordinary)));
         var context = new ScanningContext();
 
         // Act
@@ -109,8 +109,7 @@ public sealed class EndpointDiscoveryModuleTests
     public async Task ExecuteAsync_WhenBindingInfoIsMissing_UsesMethodAndBody()
     {
         // Arrange
-        var descriptor = ActionDescriptor(
-            nameof(ScanController.Explicit), BindingSource.Body, BindingSource.Query);
+        var descriptor = ActionDescriptor(nameof(ScanController.Explicit), BindingSource.Body, BindingSource.Query);
 
         descriptor.Parameters[1].BindingInfo = null;
 
@@ -123,5 +122,38 @@ public sealed class EndpointDiscoveryModuleTests
         // Assert
         Assert.Single(context.Endpoints!);
         Assert.Equal(nameof(ScanController.Explicit), context.CurrentItem);
+    }
+    
+    [Fact]
+    public async Task ExecuteAsync_WhenHttpMethodsRepeat_DeduplicatesAndSortsMethods()
+    {
+        // Arrange
+        var action = ActionDescriptor(
+            nameof(ScanController.Explicit),
+            BindingSource.Body);
+
+        action.AttributeRouteInfo = new AttributeRouteInfo
+        {
+            Template = "products"
+        };
+
+        action.ActionConstraints =
+        [
+            new HttpMethodActionConstraint(["PUT", "GET", "GET"])
+        ];
+
+        var context = new ScanningContext();
+
+        // Act
+        await Discovery(action).ExecuteAsync(context, default);
+
+        // Assert
+        Assert.NotNull(context.Endpoints);
+
+        var endpoint = Assert.Single(context.Endpoints);
+        var route = Assert.Single(endpoint.Routes);
+
+        Assert.Equal("products", route.Template);
+        Assert.Equal(new[] { "GET", "PUT" }, route.HttpMethods);
     }
 }
