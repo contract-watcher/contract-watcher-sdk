@@ -104,7 +104,7 @@ internal sealed class MicroDbSession : IDisposable
 /// </summary>
 public sealed class RetryTimeProvider : FakeTimeProvider
 {
-    private readonly global::System.Threading.Channels.Channel<bool> _timers =
+    private readonly System.Threading.Channels.Channel<bool> _timers =
         global::System.Threading.Channels.Channel.CreateUnbounded<bool>();
 
     public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)

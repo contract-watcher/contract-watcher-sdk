@@ -24,8 +24,10 @@ public sealed class ScanningModuleBuilderTests
             new[]
             {
                 typeof(EndpointDiscoveryModule),
+                typeof(ContractSynchronizationModule),
                 typeof(CustomModule),
-                typeof(ContractMappingModule)
+                typeof(ContractMappingModule),
+                typeof(ContractPersistenceModule)
             },
             services
                 .Where(value => value.ServiceType == typeof(IScanningModule))
@@ -43,7 +45,7 @@ public sealed class ScanningModuleBuilderTests
         builder.UseDefaultModules().UseDefaultModules();
 
         // Assert
-        Assert.Equal(3, services.Count(value => value.ServiceType == typeof(IScanningModule)));
+        Assert.Equal(5, services.Count(value => value.ServiceType == typeof(IScanningModule)));
     }
 
     [Fact]
@@ -68,7 +70,7 @@ public sealed class ScanningModuleBuilderTests
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddSingleton<TimeProvider>(TimeProvider.System);
+        services.AddSingleton(TimeProvider.System);
 
         var builder = new ScanningModuleBuilder(services)
             .UseDefaultModules();
@@ -76,7 +78,7 @@ public sealed class ScanningModuleBuilderTests
         var original = services.ToArray();
 
         // Act
-        var action = () =>
+        var action = () => 
             builder.ReplaceModule<CustomModule, SchemaGenerationModule>();
 
         // Assert
@@ -105,6 +107,35 @@ public sealed class ScanningModuleBuilderTests
 
         // Assert
         Assert.Throws<ArgumentNullException>("configure", action);
+    }
+    
+    [Fact]
+    public void UseSynchronizationAndPersistence_WhenReplaced_PreservePositions()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        var builder = new ScanningModuleBuilder(services)
+            .UseDefaultModules();
+
+        // Act
+        builder
+            .UseSynchronization<CustomModule>()
+            .UsePersistence<CustomModule>();
+
+        // Assert
+        Assert.Equal(
+            new[]
+            {
+                typeof(EndpointDiscoveryModule),
+                typeof(CustomModule),
+                typeof(SchemaGenerationModule),
+                typeof(ContractMappingModule),
+                typeof(CustomModule)
+            },
+            services
+                .Where(item => item.ServiceType == typeof(IScanningModule))
+                .Select(item => item.ImplementationType));
     }
 
     public sealed class CustomModule : IScanningModule

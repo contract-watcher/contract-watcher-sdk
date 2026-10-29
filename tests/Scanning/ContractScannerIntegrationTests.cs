@@ -1,4 +1,8 @@
 using System.Reflection;
+using ContractWatcher.SDK.Configuration.Extensions;
+using ContractWatcher.SDK.Tests.Fixtures;
+using ContractWatcher.SDK.Data;
+using Moq;
 using System.Text.Json.Serialization;
 using ContractWatcher.Common.Contracts;
 using ContractWatcher.Common.Enums;
@@ -17,6 +21,7 @@ using Microsoft.Extensions.Hosting;
 
 // Fixtures
 using static ContractWatcher.SDK.Tests.Fixtures.ScanningFixture;
+// ReSharper disable AccessToDisposedClosure
 
 namespace ContractWatcher.SDK.Tests.Scanning;
 
@@ -27,6 +32,7 @@ public sealed class ContractScannerIntegrationTests
     {
         // Arrange
         var probe = new ScanProbe();
+        using var fixture = new MicroDbFixture();
 
         using var host = new HostBuilder()
             .ConfigureWebHost(web => web
@@ -34,6 +40,10 @@ public sealed class ContractScannerIntegrationTests
                 .ConfigureServices(services =>
                 {
                     services.AddSingleton(probe);
+                    services.AddSingleton(fixture.Client.Object);
+                    services.AddContractWatcher(options => options.Database =
+                        new MicroDb.Options.MicroDbOptions { DirectoryPath = fixture.DirectoryPath })
+                        .AddContracts(contracts => contracts.UseMicroDbStore().UseCoreRefresher());
 
                     services.AddControllers()
                         .ConfigureApplicationPartManager(manager =>
@@ -45,7 +55,9 @@ public sealed class ContractScannerIntegrationTests
                         {
                             options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.Strict;
                         })
-                        .AddContractWatcherScanning(scanning => scanning.AddModule<CaptureModule>());
+                        .AddContractWatcherScanning(scanning => scanning
+                            .AddSynchronization(options => options.SourcePreference = ContractSourcePreference.Application)
+                            .AddModule<CaptureModule>());
                 })
                 .Configure(app =>
                 {
@@ -93,6 +105,58 @@ public sealed class ContractScannerIntegrationTests
         });
 
         await host.StopAsync();
+    }
+
+    [Fact]
+    public async Task Startup_WithSynchronization_ScansOnceAndRestoresPendingContracts()
+    {
+        // Arrange
+        using var fixture = new MicroDbFixture();
+        using (var host = new HostBuilder()
+            .ConfigureWebHost(web => web
+                .UseTestServer()
+                .ConfigureServices(services =>
+                {
+                    services.AddSingleton(fixture.Client.Object);
+                    services.AddContractWatcher(options => options.Database = new MicroDb.Options.MicroDbOptions { DirectoryPath = fixture.DirectoryPath })
+                        .AddContracts(contracts => contracts.UseMicroDbStore().UseCoreRefresher());
+                    services.AddControllers()
+                        .ConfigureApplicationPartManager(manager =>
+                        {
+                            manager.FeatureProviders.Clear();
+                            manager.FeatureProviders.Add(new ScanControllerFeatureProvider());
+                        })
+                        .AddJsonOptions(options => options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.Strict)
+                        .AddContractWatcherScanning(scanning => scanning.AddSynchronization(options =>
+                            options.SourcePreference = ContractSourcePreference.Application));
+                })
+                .Configure(app =>
+                {
+                    app.UseRouting();
+                    app.UseEndpoints(endpoints => endpoints.MapControllers());
+                }))
+            .Build())
+        {
+            // Act
+            await host.StartAsync();
+            var worker = Assert.Single(host.Services.GetServices<IHostedService>().OfType<ContractScanningWorker>());
+            await worker.ExecuteTask!.WaitAsync(TimeSpan.FromSeconds(10));
+            await host.StopAsync();
+
+            // Assert
+            Assert.Equal(2, host.Services.GetRequiredService<ContractWatcherDbContext>().ScannedContracts.Count());
+            fixture.Client.Verify(client => client.GetContractAsync("products.explicit", It.IsAny<CancellationToken>()), Times.Once);
+            fixture.Client.Verify(client => client.GetContractAsync("products.inferred", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        using var reopened = fixture.Open();
+        Assert.Equal(2, reopened.Context.ScannedContracts.Count());
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
+        Assert.All(reopened.Context.ScannedContracts, entity =>
+        {
+            Assert.True(entity.Pending);
+            Assert.Equal(0, entity.ExpectedVersion);
+        });
     }
 
     public sealed class ScanProbe

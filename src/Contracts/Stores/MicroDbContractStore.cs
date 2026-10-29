@@ -72,4 +72,62 @@ internal sealed class MicroDbContractStore(DatabaseAccess database, TimeProvider
             return true;
         }, cancellationToken).ConfigureAwait(false);
     }
+    
+    /// <summary>
+    /// Подготавливает независимые сущности
+    /// и применяет пакет под общей блокировкой.
+    /// </summary>
+    /// <remarks>
+    /// Подтверждённое отсутствие в Core удаляет локальную копию.
+    /// Существующие сущности обновляются через событийный трекинг.
+    /// </remarks>
+    public async Task ApplyAsync(
+        IReadOnlyCollection<PublishedContract> contracts,
+        IReadOnlyCollection<string> removedSlugs,
+        CancellationToken cancellationToken = default)
+    {
+        if (contracts is null)
+            throw new ArgumentNullException(nameof(contracts));
+        
+        if (removedSlugs is null)
+            throw new ArgumentNullException(nameof(removedSlugs));
+
+        if (cancellationToken.IsCancellationRequested)
+            throw new OperationCanceledException();
+
+        var now = clock.GetUtcNow();
+
+        var incoming = contracts
+            .Select(contract => contract.ToEntity(now))
+            .ToArray();
+
+        var removed = removedSlugs.ToArray();
+
+        if (incoming.Any(contract => string.IsNullOrWhiteSpace(contract.Slug)) ||
+            removed.Any(string.IsNullOrWhiteSpace))
+            throw new ArgumentException("Contract slug is required.");
+
+        if (incoming.Select(contract => contract.Slug)
+            .Distinct(StringComparer.Ordinal)
+            .Count() != incoming.Length)
+            throw new ArgumentException("Duplicate contract slug.", nameof(contracts));
+
+        await database.WriteAsync(db =>
+        {
+            foreach (var slug in removed)
+                db.Contracts.Remove(slug);
+
+            foreach (var contract in incoming)
+            {
+                var existing = db.Contracts.Find(contract.Slug);
+
+                if (existing is null)
+                    db.Contracts.Add(contract);
+                else
+                    existing.Apply(contract.ToDto(), now);
+            }
+
+            return true;
+        }, cancellationToken).ConfigureAwait(false);
+    }
 }

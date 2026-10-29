@@ -13,6 +13,7 @@ using Moq;
 
 // Fixtures
 using static ContractWatcher.SDK.Tests.Fixtures.ReportingFixture;
+// ReSharper disable InconsistentNaming
 
 namespace ContractWatcher.SDK.Tests.Reporting.Services;
 
@@ -138,12 +139,14 @@ public sealed class ReportDeliveryServiceTests : IDisposable
 
         var report = CreateReport();
 
+        // ReSharper disable once AccessToDisposedClosure
         _client
             .Setup(client => client.PublishReportAsync(It.IsAny<ValidationReport>(), cancellation.Token))
             .Returns(() =>
             {
+                // ReSharper disable once AccessToDisposedClosure
                 cancellation.Cancel();
-
+                // ReSharper disable once AccessToDisposedClosure
                 return Task.FromCanceled(cancellation.Token);
             });
 

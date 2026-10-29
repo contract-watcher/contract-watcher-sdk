@@ -15,6 +15,8 @@ using Moq;
 
 // Fixtures
 using static ContractWatcher.SDK.Tests.Fixtures.ReportingFixture;
+// ReSharper disable InconsistentNaming
+// ReSharper disable AccessToDisposedClosure
 
 namespace ContractWatcher.SDK.Tests.Reporting.Workers;
 

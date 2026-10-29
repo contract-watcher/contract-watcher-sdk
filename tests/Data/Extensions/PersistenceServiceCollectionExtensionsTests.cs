@@ -138,6 +138,7 @@ public sealed class PersistenceServiceCollectionExtensionsTests : IDisposable
         using var provider = services.BuildServiceProvider();
 
         // Act
+        // ReSharper disable once AccessToDisposedClosure
         var action = () => 
             provider.GetRequiredService<IOptions<ContractWatcher.SDK.Configuration.Options.ContractWatcherOptions>>()
             .Value;

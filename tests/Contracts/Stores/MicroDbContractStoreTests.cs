@@ -88,6 +88,7 @@ public sealed class MicroDbContractStoreTests : IDisposable
         using var session = Open();
 
         // Act
+        // ReSharper disable once AccessToDisposedClosure
         var action = () => session.Contracts.SetAsync(null!);
 
         // Assert
@@ -117,6 +118,92 @@ public sealed class MicroDbContractStoreTests : IDisposable
         // Assert
         Assert.Equal("id", session.Contracts.Get("products")!.Rules.Single().FieldName);
         Assert.Equal(new[] { "products" }, session.Contracts.GetSlugs());
+    }
+    
+    [Theory]
+    [InlineData("contracts")]
+    [InlineData("removed")]
+    [InlineData("contract-slug")]
+    [InlineData("removed-slug")]
+    [InlineData("duplicate")]
+    public async Task ApplyAsync_WhenBatchIsInvalid_DoesNotChangeStore(string invalid)
+    {
+        // Arrange
+        using var fixture = new MicroDbFixture();
+        using var session = fixture.Open();
+    
+        IReadOnlyCollection<PublishedContract> contracts = invalid switch
+        {
+            "contracts" => null!,
+            "contract-slug" => [CreateContract(" ")],
+            "duplicate" => [CreateContract(), CreateContract()],
+            _ => []
+        };
+    
+        IReadOnlyCollection<string> removed = invalid switch
+        {
+            "removed" => null!,
+            "removed-slug" => [" "],
+            _ => []
+        };
+    
+        // Act
+        await Assert.ThrowsAnyAsync<ArgumentException>(() =>
+            session.Contracts.ApplyAsync(contracts, removed));
+    
+        // Assert
+        Assert.Empty(session.Contracts.GetSlugs());
+    }
+    
+    [Fact]
+    public async Task ApplyAsync_WhenCanceled_DoesNotChangeStore()
+    {
+        // Arrange
+        using var fixture = new MicroDbFixture();
+        using var session = fixture.Open();
+        using var cancellation = new CancellationTokenSource();
+    
+        cancellation.Cancel();
+    
+        // Act
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            session.Contracts.ApplyAsync(
+                [CreateContract()],
+                [],
+                cancellation.Token));
+    
+        // Assert
+        Assert.Empty(session.Contracts.GetSlugs());
+    }
+    
+    [Fact]
+    public async Task ApplyAsync_WhenContractExists_UpdatesTrackedInstanceAndPersistsBatch()
+    {
+        // Arrange
+        using var fixture = new MicroDbFixture();
+    
+        using (var session = fixture.Open())
+        {
+            await session.Contracts.SetAsync(CreateContract());
+            await session.Contracts.SetAsync(CreateContract("removed"));
+    
+            var original = session.Context.Contracts.Find("products");
+    
+            // Act
+            await session.Contracts.ApplyAsync(
+                [CreateContract(version: 9, rules: [])], ["removed"]);
+    
+            // Assert
+            Assert.Same(original, session.Context.Contracts.Find("products"));
+        }
+    
+        using var reopened = fixture.Open();
+    
+        var restored = reopened.Contracts.Get("products")!;
+    
+        Assert.Equal(9, restored.ContractVersion);
+        Assert.Empty(restored.Rules);
+        Assert.Null(reopened.Contracts.Get("removed"));
     }
 
     public void Dispose() => _fixture.Dispose();

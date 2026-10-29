@@ -41,4 +41,25 @@ public interface IContractStore
     /// </summary>
     /// <param name="cancellationToken">Токен отмены записи.</param>
     Task ClearAsync(CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Применяет полученные контракты и подтверждённые удаления.
+    /// </summary>
+    /// <remarks>
+    /// MicroDb реализует пакет одним изменением контекста.
+    /// Совместимая реализация для пользовательских stores
+    /// выполняет операции последовательно.
+    /// При пересечении slug удаление выполняется перед добавлением.
+    /// </remarks>
+    async Task ApplyAsync(
+        IReadOnlyCollection<PublishedContract> contracts,
+        IReadOnlyCollection<string> removedSlugs,
+        CancellationToken cancellationToken = default)
+    {
+        foreach (var slug in removedSlugs)
+            await RemoveAsync(slug, cancellationToken).ConfigureAwait(false);
+
+        foreach (var contract in contracts)
+            await SetAsync(contract, cancellationToken).ConfigureAwait(false);
+    }
 }

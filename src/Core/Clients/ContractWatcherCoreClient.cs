@@ -25,7 +25,8 @@ public class ContractWatcherCoreClient(HttpClient httpClient) : IContractWatcher
         if (response.StatusCode == HttpStatusCode.NotFound)
             return null;
 
-        return await response.Content.ReadFromJsonAsync<PublishedContract>(cancellationToken);
+        return await response.Content.ReadFromJsonAsync<PublishedContract>(cancellationToken)
+            ?? throw new CoreRequestException(CoreRequestError.UnexpectedResponse, "Core returned null instead of a contract.");
     }
     
     public async Task PublishReportAsync(ValidationReport report, CancellationToken cancellationToken = default)

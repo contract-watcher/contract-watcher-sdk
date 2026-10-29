@@ -1,7 +1,10 @@
 using System.Text.Json.Nodes;
+using ContractWatcher.Common.Contracts;
 using ContractWatcher.Common.Enums;
+using ContractWatcher.SDK.Contracts.Models;
 using ContractWatcher.SDK.Scanning.Models;
 using ContractWatcher.SDK.Scanning.Modules;
+using ContractWatcher.SDK.Tests.Fixtures;
 
 // Fixtures
 using static ContractWatcher.SDK.Tests.Fixtures.ScanningFixture;
@@ -216,10 +219,7 @@ public sealed class ContractMappingModuleTests
         // Arrange
         var context = Context(Endpoint());
 
-        context.Schemas = new Dictionary<Type, JsonNode>
-        {
-            [typeof(Request)] = null!
-        };
+        context.Schemas = new Dictionary<Type, JsonNode> { [typeof(Request)] = null! };
 
         // Act
         var action = () => new ContractMappingModule().ExecuteAsync(context, default);
@@ -227,5 +227,105 @@ public sealed class ContractMappingModuleTests
         // Assert
         await Assert.ThrowsAsync<ArgumentNullException>(action);
         Assert.Null(context.Contracts);
+    }
+    
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ExecuteAsync_WhenSynchronizationIsMissing_RejectsContext(bool missingStage)
+    {
+        // Arrange
+        var context = Context(Endpoint());
+    
+        context.Schemas = new Dictionary<Type, JsonNode>
+        {
+            [typeof(Request)] = JsonNode.Parse("""{"type":"object"}""")!
+        };
+    
+        context.RefreshedContracts = missingStage ? null : [];
+    
+        // Act
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            new ContractMappingModule().ExecuteAsync(context, default));
+    
+        // Assert
+        Assert.Null(context.MappingResults);
+        Assert.Null(context.Contracts);
+    }
+    
+    [Theory]
+    [InlineData("other", 1)]
+    [InlineData("products", 0)]
+    public async Task ExecuteAsync_WhenRefresherReturnsInvalidContract_RejectsResult(string slug, int version)
+    {
+        // Arrange
+        var context = Context(Endpoint());
+    
+        context.Schemas = new Dictionary<Type, JsonNode>
+        {
+            [typeof(Request)] = JsonNode.Parse("""{"type":"object"}""")!
+        };
+    
+        context.RefreshedContracts =
+        [
+            new ContractRefreshResult
+            {
+                Slug = "products",
+                Contract = ContractFixture.CreateContract(slug, version)
+            }
+        ];
+    
+        // Act
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            new ContractMappingModule().ExecuteAsync(context, default));
+    
+        // Assert
+        Assert.Null(context.MappingResults);
+    }
+    
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ExecuteAsync_WhenCoreFailsWithoutCachedContract_PreservesRulesWithoutVersion(bool missingCache)
+    {
+        // Arrange
+        var context = Context(Endpoint());
+    
+        context.Schemas = new Dictionary<Type, JsonNode>
+        {
+            [typeof(Request)] = JsonNode.Parse(
+                """
+                {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string" }
+                    }
+                }
+                """)!
+        };
+    
+        context.CachedContracts = missingCache ? null : new Dictionary<string, PublishedContract>();
+    
+        context.RefreshedContracts =
+        [
+            new ContractRefreshResult
+            {
+                Slug = "products",
+                Error = new IOException("Offline")
+            }
+        ];
+    
+        // Act
+        await new ContractMappingModule().ExecuteAsync(context, default);
+    
+        // Assert
+        var result = Assert.Single(context.MappingResults!);
+    
+        Assert.True(result.Pending);
+        Assert.Null(result.ExpectedVersion);
+        Assert.Null(result.TargetVersion);
+        Assert.Null(result.Contract);
+        Assert.Equal("id", Assert.Single(result.Rules).FieldName);
+        Assert.Empty(context.Contracts!);
     }
 }

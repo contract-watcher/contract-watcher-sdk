@@ -36,6 +36,11 @@ internal sealed class ContractWatcherDbContext : MicroDbContext
     /// Ключ — ReportId, файл — report-retries.json.
     /// </summary>
     public MicroDbSet<ReportRetryEntity, Guid> ReportRetries { get; }
+    
+    /// <summary>
+    /// Результаты сканирования и незавершённые намерения публикации.
+    /// </summary>
+    public MicroDbSet<ScannedContractEntity, string> ScannedContracts { get; }
 
     /// <summary>
     /// Открывает наборы и включает события изменения сущностей.
@@ -51,5 +56,7 @@ internal sealed class ContractWatcherDbContext : MicroDbContext
             "reports", static entity => entity.ReportId, ChangeTrackingMode.Events);
         ReportRetries = Set<ReportRetryEntity, Guid>(
             "report-retries", static entity => entity.ReportId, ChangeTrackingMode.Events);
+        ScannedContracts = Set<ScannedContractEntity, string>(
+            "scanned-contracts", static entity => entity.Slug, ChangeTrackingMode.Events);
     }
 }

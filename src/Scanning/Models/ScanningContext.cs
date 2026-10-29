@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
 using ContractWatcher.Common.Contracts;
+using ContractWatcher.SDK.Contracts.Models;
+using ContractWatcher.SDK.Scanning.Enums;
 
 namespace ContractWatcher.SDK.Scanning.Models;
 
@@ -7,20 +9,33 @@ namespace ContractWatcher.SDK.Scanning.Models;
 /// Содержит результаты этапов одного запуска сканирования.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Один экземпляр передаётся всем модулям и сохраняется между попытками.
-/// </para>
-/// <para>
+/// Один экземпляр передаётся всем модулям
+/// и сохраняется между попытками.
 /// Null означает, что результат этапа ещё не сформирован.
-/// Пустая коллекция означает успешное выполнение без результатов.
-/// </para>
 /// </remarks>
 public sealed class ScanningContext
 {
     /// <summary>
-    /// Endpoints, для которых необходимо сформировать контракты.
+    /// Обнаруженные endpoints.
     /// </summary>
     public IReadOnlyCollection<DiscoveredEndpoint>? Endpoints { get; set; }
+
+    /// <summary>
+    /// Снимки локальных контрактов до обращения к Core.
+    /// Используются при ошибке запроса.
+    /// </summary>
+    public IReadOnlyDictionary<string, PublishedContract>? CachedContracts { get; set; }
+
+    /// <summary>
+    /// Результаты получения опубликованных контрактов из Core.
+    /// </summary>
+    public IReadOnlyCollection<ContractRefreshResult>? RefreshedContracts { get; set; }
+
+    /// <summary>
+    /// Приоритет источника, зафиксированный
+    /// модулем синхронизации для текущего прохода.
+    /// </summary>
+    public ContractSourcePreference SourcePreference { get; set; }
 
     /// <summary>
     /// JSON Schema входных моделей, сгруппированные по CLR-типу.
@@ -28,16 +43,25 @@ public sealed class ScanningContext
     public IReadOnlyDictionary<Type, JsonNode>? Schemas { get; set; }
 
     /// <summary>
-    /// Сформированные контракты для последующих этапов.
+    /// Решения mapping для всех endpoints,
+    /// включая контракты с пока неизвестной версией.
     /// </summary>
+    public IReadOnlyCollection<ContractMappingResult>? MappingResults { get; set; }
+
+    /// <summary>
+    /// Выбранные контракты, включая кандидатов
+    /// с назначенной SDK версией.
+    /// </summary>
+    /// <remarks>
+    /// Наличие контракта здесь не означает успешную публикацию.
+    /// Контракты без доступного содержимого и версии
+    /// остаются только в MappingResults.
+    /// </remarks>
     public IReadOnlyCollection<PublishedContract>? Contracts { get; set; }
 
     /// <summary>
-    /// Имя обрабатываемого объекта для диагностики:
-    /// например, DTO или slug контракта.
+    /// Имя текущего объекта для диагностики.
+    /// Исполнитель сбрасывает значение перед повторной попыткой.
     /// </summary>
-    /// <remarks>
-    /// Исполнитель сбрасывает значение перед каждой попыткой.
-    /// </remarks>
     public string? CurrentItem { get; set; }
 }

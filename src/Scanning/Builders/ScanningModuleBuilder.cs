@@ -1,3 +1,4 @@
+using ContractWatcher.SDK.Data.Extensions;
 using ContractWatcher.SDK.Scanning.Interfaces;
 using ContractWatcher.SDK.Scanning.Modules;
 using ContractWatcher.SDK.Scanning.Options;
@@ -88,8 +89,10 @@ public sealed class ScanningModuleBuilder
     /// </summary>
     public ScanningModuleBuilder UseDefaultModules() =>
         AddDiscovery()
+        .AddSynchronization()
         .AddSchemaGeneration()
-        .AddMapping();
+        .AddMapping()
+        .AddPersistence();
 
     /// <summary>
     /// Настраивает количество попыток и задержку между ними.
@@ -103,4 +106,51 @@ public sealed class ScanningModuleBuilder
 
         return this;
     }
+    
+    /// <summary>
+    /// Добавляет синхронизацию после discovery и до генерации схем.
+    /// Требует зарегистрированных IContractStore и IContractRefresher.
+    /// </summary>
+    /// <remarks>
+    /// Повторный вызов не дублирует модуль
+    /// и не изменяет его положение в цепочке.
+    /// </remarks>
+    public ScanningModuleBuilder AddSynchronization(Action<ContractSynchronizationOptions>? configure = null)
+    {
+        Services.AddContractWatcherPersistence();
+
+        Services.AddOptions<ContractSynchronizationOptions>()
+            .Validate(value => 
+                Enum.IsDefined(value.SourcePreference), "Unknown contract source preference.")
+            .ValidateOnStart();
+
+        if (configure is not null)
+            Services.Configure(configure);
+
+        return AddModule<ContractSynchronizationModule>();
+    }
+
+    /// <summary>
+    /// Заменяет подключённый модуль синхронизации пользовательским,
+    /// сохраняя его позицию.
+    /// </summary>
+    public ScanningModuleBuilder UseSynchronization<TModule>() where TModule : class, IScanningModule =>
+        ReplaceModule<ContractSynchronizationModule, TModule>();
+    
+    /// <summary>
+    /// Добавляет сохранение результатов после mapping.
+    /// </summary>
+    public ScanningModuleBuilder AddPersistence()
+    {
+        Services.AddContractWatcherPersistence();
+
+        return AddModule<ContractPersistenceModule>();
+    }
+
+    /// <summary>
+    /// Заменяет подключённый модуль сохранения пользовательским,
+    /// сохраняя его позицию.
+    /// </summary>
+    public ScanningModuleBuilder UsePersistence<TModule>() where TModule : class, IScanningModule =>
+        ReplaceModule<ContractPersistenceModule, TModule>();
 }
