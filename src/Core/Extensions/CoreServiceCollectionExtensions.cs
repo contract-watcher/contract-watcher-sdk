@@ -33,6 +33,14 @@ internal static class CoreServiceCollectionExtensions
                 $"{nameof(ContractWatcherOptions.CoreUrl)} must be a base HTTP or HTTPS URL without a path, query, or fragment.")
             .Validate(static options => !string.IsNullOrWhiteSpace(options.IntegrationKey),
                 $"{nameof(ContractWatcherOptions.IntegrationKey)} is required.")
+            .Validate(options =>
+                options.CoreRequestTimeout > TimeSpan.Zero &&
+                options.CoreRequestTimeout <= TimeSpan.FromMinutes(10),
+            "Core request timeout must be within (0, 10 minutes].")
+            .Validate(options =>
+                options.MaxCoreResponseBytes > 0 &&
+                options.MaxCoreResponseBytes <= int.MaxValue,
+            "Core response size limit is invalid.")
             .ValidateOnStart();
 
         services.AddHttpClient<IContractWatcherCoreClient, ContractWatcherCoreClient>(
@@ -43,7 +51,8 @@ internal static class CoreServiceCollectionExtensions
                     .Value;
 
                 httpClient.BaseAddress = new Uri(options.CoreUrl);
-
+                httpClient.Timeout = options.CoreRequestTimeout;
+                httpClient.MaxResponseContentBufferSize = options.MaxCoreResponseBytes;
                 httpClient.DefaultRequestHeaders.Add(CoreHeaders.ApiKey, options.IntegrationKey);
             });
 

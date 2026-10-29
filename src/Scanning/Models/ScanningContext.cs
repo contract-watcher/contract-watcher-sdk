@@ -64,4 +64,10 @@ public sealed class ScanningContext
     /// Исполнитель сбрасывает значение перед повторной попыткой.
     /// </summary>
     public string? CurrentItem { get; set; }
+    
+    /// <summary>
+    /// Подтверждает сохранение текущих результатов mapping
+    /// перед запуском публикации.
+    /// </summary>
+    public bool PersistenceCompleted { get; set; }
 }

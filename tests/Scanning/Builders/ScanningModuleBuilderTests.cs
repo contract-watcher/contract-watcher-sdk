@@ -1,9 +1,13 @@
+using ContractWatcher.SDK.Contracts.Options;
+using ContractWatcher.SDK.Contracts.Workers;
 using ContractWatcher.SDK.Scanning.Builders;
 using ContractWatcher.SDK.Scanning.Enums;
 using ContractWatcher.SDK.Scanning.Interfaces;
 using ContractWatcher.SDK.Scanning.Models;
 using ContractWatcher.SDK.Scanning.Modules;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+// ReSharper disable AccessToDisposedClosure
 
 namespace ContractWatcher.SDK.Tests.Scanning.Builders;
 
@@ -136,6 +140,80 @@ public sealed class ScanningModuleBuilderTests
             services
                 .Where(item => item.ServiceType == typeof(IScanningModule))
                 .Select(item => item.ImplementationType));
+    }
+    
+    [Theory]
+    [InlineData("attempts")]
+    [InlineData("batch")]
+    [InlineData("initial")]
+    [InlineData("max-small")]
+    [InlineData("max-large")]
+    [InlineData("poll-small")]
+    [InlineData("poll-large")]
+    public void AddPublication_WhenOptionsAreInvalid_RejectsConfiguration(string invalid)
+    {
+        // Arrange
+        var services = new ServiceCollection();
+    
+        new ScanningModuleBuilder(services)
+            .AddPublication(options =>
+            {
+                switch (invalid)
+                {
+                    case "attempts":
+                        options.MaxAttempts = -1;
+                        break;
+    
+                    case "batch":
+                        options.BatchSize = 0;
+                        break;
+    
+                    case "initial":
+                        options.InitialDelay = TimeSpan.Zero;
+                        break;
+    
+                    case "max-small":
+                        options.MaxDelay = TimeSpan.Zero;
+                        break;
+    
+                    case "max-large":
+                        options.MaxDelay = TimeSpan.FromDays(2);
+                        break;
+    
+                    case "poll-small":
+                        options.PollInterval = TimeSpan.Zero;
+                        break;
+    
+                    case "poll-large":
+                        options.PollInterval = TimeSpan.FromDays(2);
+                        break;
+                }
+            });
+    
+        using var provider = services.BuildServiceProvider();
+    
+        // Act
+        var action = () => provider
+            .GetRequiredService<IOptions<ContractPublicationOptions>>()
+            .Value;
+    
+        // Assert
+        Assert.Throws<OptionsValidationException>(action);
+    }
+    
+    [Fact]
+    public void AddPublication_WhenRepeated_DoesNotDuplicateWorkerOrModule()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var builder = new ScanningModuleBuilder(services);
+    
+        // Act
+        builder.AddPublication().AddPublication();
+    
+        // Assert
+        Assert.Single(services, item => item.ServiceType == typeof(IScanningModule));
+        Assert.Single(services, item => item.ImplementationType == typeof(ContractPublicationWorker));
     }
 
     public sealed class CustomModule : IScanningModule

@@ -1,5 +1,6 @@
 using ContractWatcher.SDK.Scanning.Exceptions;
 using ContractWatcher.SDK.Scanning.Interfaces;
+using ContractWatcher.SDK.Scanning.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -22,7 +23,8 @@ namespace ContractWatcher.SDK.Scanning.Workers;
 internal sealed class ContractScanningWorker(
     IServiceScopeFactory scopeFactory,
     IHostApplicationLifetime lifetime,
-    ILogger<ContractScanningWorker> logger) : BackgroundService
+    ILogger<ContractScanningWorker> logger,
+    ScanningCompletion? completion = null) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
@@ -38,16 +40,16 @@ internal sealed class ContractScanningWorker(
 
             await using var scope = scopeFactory.CreateAsyncScope();
 
-            var scanner = scope.ServiceProvider
-                .GetRequiredService<IContractScanner>();
+            var scanner = scope.ServiceProvider.GetRequiredService<IContractScanner>();
 
             var contracts = await scanner
                 .ScanAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             logger.LogInformation("Contract scanning completed. Generated {Count} contracts.", contracts.Count);
+            completion?.Complete(true);
         }
-        catch (OperationCanceledException)when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             // Штатная остановка приложения
         }
@@ -60,6 +62,13 @@ internal sealed class ContractScanningWorker(
         catch (Exception exception)
         {
             logger.LogError(exception, "Could not complete contract scanning.");
+        }
+        finally
+        {
+            // TrySetResult внутри Complete не перезапишет успешный результат.
+            // Если сканирование упало или отменилось, воркер не начнёт
+            // отправлять очередь до проверки актуальных правил приложения.
+            completion?.Complete(false);
         }
     }
 }

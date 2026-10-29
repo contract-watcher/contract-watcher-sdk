@@ -85,4 +85,41 @@ public class ContractWatcherCoreClient(HttpClient httpClient) : IContractWatcher
                 exception);
         }
     }
+    
+    /// <summary>
+    /// Публикует контракт с версией, назначенной SDK.
+    /// </summary>
+    /// <param name="contract">Подготовленный контракт.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    /// <remarks>
+    /// Успешное завершение означает, что Core подтвердил сохранение.
+    /// </remarks>
+    public async Task PublishContractAsync(PublishedContract contract, CancellationToken cancellationToken = default)
+    {
+        if (contract is null)
+            throw new ArgumentNullException(nameof(contract));
+
+        if (string.IsNullOrWhiteSpace(contract.Slug))
+            throw new ArgumentException("Contract slug is required.", nameof(contract));
+
+        if (contract.ContractVersion <= 0)
+            throw new ArgumentOutOfRangeException(nameof(contract), "Contract version must be positive.");
+
+        using var request = new HttpRequestMessage
+            (HttpMethod.Post, $"{CoreRoutes.PublishContract}/{Uri.EscapeDataString(contract.Slug)}") 
+            { Content = JsonContent.Create(contract) };
+
+        using var response = await SendAsync(request, cancellationToken)
+            .ConfigureAwait(false);
+
+        // Accepted означает принятие в обработку, но ещё не сохранение.
+        // Для перехода к локальному подтверждению нужен окончательный успех.
+        if (response.StatusCode == HttpStatusCode.Accepted)
+        {
+            throw new CoreRequestException(
+                CoreRequestError.UnexpectedResponse,
+                "Publication requires a durable acknowledgement; HTTP 202 is not sufficient.",
+                response.StatusCode);
+        }
+    }
 }

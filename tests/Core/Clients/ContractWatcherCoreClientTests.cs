@@ -322,4 +322,104 @@ public sealed class ContractWatcherCoreClientTests
         // Assert
         Assert.Equal(CoreRequestError.UnexpectedResponse, exception.Error);
     }
+    
+    [Fact]
+    public async Task PublishContractAsync_WhenAccepted_SendsExpectedRouteAndBody()
+    {
+        // Arrange
+        var handler = new Mock<HttpMessageHandler>();
+    
+        string? path = null;
+        string? body = null;
+        HttpMethod? method = null;
+    
+        handler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns(async (HttpRequestMessage request, CancellationToken token) =>
+            {
+                path = request.RequestUri!.AbsolutePath;
+                method = request.Method;
+                body = await request.Content!.ReadAsStringAsync(token);
+    
+                return new HttpResponseMessage(HttpStatusCode.NoContent);
+            });
+    
+        using var http = new HttpClient(handler.Object) { BaseAddress = new Uri(CoreUrl) };
+    
+        var client = new ContractWatcherCoreClient(http);
+    
+        // Act
+        await client.PublishContractAsync(CreateContract("products", 8));
+    
+        // Assert
+        Assert.Equal(HttpMethod.Post, method);
+        Assert.Equal("/api/sdk/contracts/publish/products", path);
+    
+        using var json = JsonDocument.Parse(body!);
+    
+        Assert.Equal("products", json.RootElement.GetProperty("slug").GetString());
+        Assert.Equal(8, json.RootElement.GetProperty("contractVersion").GetInt32());
+    }
+    
+    [Theory]
+    [InlineData(202)]
+    [InlineData(401)]
+    [InlineData(503)]
+    public async Task PublishContractAsync_WhenNotConfirmed_ThrowsCoreError(int status)
+    {
+        // Arrange
+        using var response = new HttpResponseMessage((HttpStatusCode)status);
+        using var http = CreateHttpClient(response);
+    
+        var client = new ContractWatcherCoreClient(http);
+    
+        // Act
+        var exception = await Assert.ThrowsAsync<CoreRequestException>(
+            () => client.PublishContractAsync(CreateContract()));
+    
+        // Assert
+        Assert.Equal((HttpStatusCode)status, exception.StatusCode);
+    }
+    
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData(null)]
+    public async Task PublishContractAsync_WhenSlugIsInvalid_Throws(string? slug)
+    {
+        // Arrange
+        using var response = new HttpResponseMessage(HttpStatusCode.NoContent);
+        using var http = CreateHttpClient(response);
+    
+        var client = new ContractWatcherCoreClient(http);
+    
+        // Act
+        var action = () => client.PublishContractAsync(CreateContract(slug!));
+    
+        // Assert
+        await Assert.ThrowsAsync<ArgumentException>(action);
+    }
+    
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task PublishContractAsync_WhenVersionIsInvalid_Throws(int version)
+    {
+        // Arrange
+        using var response = new HttpResponseMessage(HttpStatusCode.NoContent);
+        using var http = CreateHttpClient(response);
+    
+        var client = new ContractWatcherCoreClient(http);
+    
+        // Act
+        var action = () => client.PublishContractAsync(CreateContract(version: version));
+    
+        // Assert
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(action);
+        await Assert.ThrowsAsync<ArgumentNullException>(() => client.PublishContractAsync(null!));
+    }
 }

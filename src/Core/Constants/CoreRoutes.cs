@@ -14,4 +14,9 @@ internal static class CoreRoutes
     /// Роуты для контроллера отчетов
     /// </summary>
     public const string Reports = "/api/sdk/reports";
+    
+    /// <summary>
+    /// Маршрут публикации контракта
+    /// </summary>
+    public const string PublishContract = "/api/sdk/contracts/publish";
 }

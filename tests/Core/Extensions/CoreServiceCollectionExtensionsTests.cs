@@ -127,4 +127,35 @@ public sealed class CoreServiceCollectionExtensionsTests
         // Assert
         await Assert.ThrowsAsync<OptionsValidationException>(action);
     }
+    
+    [Theory]
+    [InlineData(0, 1024)]
+    [InlineData(601, 1024)]
+    [InlineData(10, 0)]
+    [InlineData(10, 2147483648L)]
+    public void AddCore_WhenHttpLimitsAreInvalid_RejectsConfiguration(int seconds, long bytes)
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        services
+            .AddContractWatcher(options =>
+            {
+                options.CoreUrl = CoreUrl;
+                options.IntegrationKey = IntegrationKey;
+                options.CoreRequestTimeout = TimeSpan.FromSeconds(seconds);
+                options.MaxCoreResponseBytes = bytes;
+            })
+            .AddCore();
+
+        using var provider = services.BuildServiceProvider();
+
+        // Act
+        // ReSharper disable once AccessToDisposedClosure
+        var action = () => 
+            provider.GetRequiredService<IContractWatcherCoreClient>();
+
+        // Assert
+        Assert.Throws<OptionsValidationException>(action);
+    }
 }
