@@ -18,7 +18,8 @@ public interface IContractWatcherCoreClient
     Task PublishReportAsync(ValidationReport report, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Публикует контракт с версией, назначенной SDK
+    /// Публикует правила и возвращает контракт с версией, назначенной Core.
     /// </summary>
-    Task PublishContractAsync(PublishedContract contract, CancellationToken cancellationToken = default);
+    Task<PublishedContract> PublishContractAsync(
+        PublishedContract contract, CancellationToken cancellationToken = default);
 }

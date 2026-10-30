@@ -82,10 +82,21 @@ internal sealed class ContractDeliveryProcessor(
 
         if (!equal)
         {
-            await client.PublishContractAsync(context.ToContract(), cancellationToken)
+            var published = await client
+                .PublishContractAsync(context.ToContract(), cancellationToken)
                 .ConfigureAwait(false);
 
-            await deliveryStore.ConfirmPublicationAsync(context.Slug, cancellationToken)
+            // Core назначает окончательную версию.
+            // Проверяем, что подтверждены именно отправленные правила.
+            if (!ContractContentComparer.AreEqual(context.Slug, context.Rules, published))
+                throw new InvalidOperationException("Core returned different rules after publication.");
+
+            context.Version = published.ContractVersion;
+
+            // Сохраняем окончательную версию вместе с переходом к Persistence.
+            // После перезапуска локальное подтверждение использует версию Core.
+            await deliveryStore.ConfirmPublicationAsync(
+                context.Slug, published.ContractVersion, cancellationToken)
                 .ConfigureAwait(false);
 
             context.Stage = ScanningStage.Persistence;

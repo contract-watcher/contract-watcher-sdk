@@ -128,20 +128,21 @@ internal sealed class ContractDeliveryStore(
             cancellationToken);
 
     /// <summary>
-    /// Сохраняет подтверждение публикации со стороны Core.
+    /// Сохраняет окончательную версию Core и подтверждение публикации.
     /// </summary>
     /// <remarks>
-    /// После этого операция продолжится с локального сохранения
-    /// без повторного HTTP-запроса.
+    /// Версия сохраняется до перехода к локальному подтверждению,
+    /// чтобы восстановление после перезапуска использовало ответ Core.
     /// </remarks>
-    internal Task ConfirmPublicationAsync(string slug, CancellationToken cancellationToken) =>
+    internal Task ConfirmPublicationAsync(string slug, int version, CancellationToken cancellationToken) =>
         database.WriteAsync(db =>
             {
+                db.ScannedContracts.Find(slug)!.TargetVersion = version;
+
                 Advance(db.ContractRetries.Find(slug)!, ScanningStage.Persistence);
 
                 return true;
-            },
-            cancellationToken);
+            }, cancellationToken);
 
     /// <summary>
     /// Подтверждает завершение доставки и удаляет retry-запись.

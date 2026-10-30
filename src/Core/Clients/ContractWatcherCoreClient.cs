@@ -87,39 +87,63 @@ public class ContractWatcherCoreClient(HttpClient httpClient) : IContractWatcher
     }
     
     /// <summary>
-    /// Публикует контракт с версией, назначенной SDK.
+    /// Публикует правила контракта и получает опубликованную версию из Core.
     /// </summary>
-    /// <param name="contract">Подготовленный контракт.</param>
+    /// <param name="contract">Контракт с правилами, подготовленными SDK.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    /// <remarks>
-    /// Успешное завершение означает, что Core подтвердил сохранение.
-    /// </remarks>
-    public async Task PublishContractAsync(PublishedContract contract, CancellationToken cancellationToken = default)
+    /// <returns>Контракт с окончательной версией, назначенной Core.</returns>
+    public async Task<PublishedContract> PublishContractAsync(
+        PublishedContract contract, CancellationToken cancellationToken = default)
     {
         if (contract is null)
             throw new ArgumentNullException(nameof(contract));
-
+    
         if (string.IsNullOrWhiteSpace(contract.Slug))
             throw new ArgumentException("Contract slug is required.", nameof(contract));
-
-        if (contract.ContractVersion <= 0)
+        
+        if (contract.ContractVersion <= 0) 
             throw new ArgumentOutOfRangeException(nameof(contract), "Contract version must be positive.");
-
-        using var request = new HttpRequestMessage
-            (HttpMethod.Post, $"{CoreRoutes.PublishContract}/{Uri.EscapeDataString(contract.Slug)}") 
+    
+        using var request = new HttpRequestMessage(HttpMethod.Post, CoreRoutes.Contracts)
             { Content = JsonContent.Create(contract) };
-
+    
         using var response = await SendAsync(request, cancellationToken)
             .ConfigureAwait(false);
-
-        // Accepted означает принятие в обработку, но ещё не сохранение.
-        // Для перехода к локальному подтверждению нужен окончательный успех.
-        if (response.StatusCode == HttpStatusCode.Accepted)
+    
+        if (response.StatusCode is not HttpStatusCode.OK and not HttpStatusCode.Created)
         {
             throw new CoreRequestException(
                 CoreRequestError.UnexpectedResponse,
-                "Publication requires a durable acknowledgement; HTTP 202 is not sufficient.",
+                "Core did not return a published contract.",
                 response.StatusCode);
         }
+    
+        PublishedContract? published;
+    
+        try
+        {
+            published = await response.Content
+                .ReadFromJsonAsync<PublishedContract>(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (System.Text.Json.JsonException exception)
+        {
+            throw new CoreRequestException(
+                CoreRequestError.UnexpectedResponse,
+                "Core returned an invalid published contract.",
+                response.StatusCode, exception);
+        }
+    
+        if (published is null ||
+            !StringComparer.Ordinal.Equals(published.Slug, contract.Slug) ||
+            published.ContractVersion <= 0 || published.Rules is null)
+        {
+            throw new CoreRequestException(
+                CoreRequestError.UnexpectedResponse,
+                "Core returned an incompatible published contract.",
+                response.StatusCode);
+        }
+    
+        return published;
     }
 }

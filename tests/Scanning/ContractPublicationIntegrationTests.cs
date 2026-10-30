@@ -53,18 +53,20 @@ public sealed class ContractPublicationIntegrationTests
                     var path = context.Request.Path.Value!;
 
                     if (HttpMethods.IsPost(context.Request.Method) &&
-                        path.StartsWith("/api/sdk/contracts/publish/", StringComparison.Ordinal))
+                        path == "/api/sdk/contracts")
                     {
                         var contract = await context.Request.ReadFromJsonAsync<PublishedContract>();
 
                         Assert.NotNull(contract);
-                        Assert.Equal("/api/sdk/contracts/publish/" + contract.Slug, path);
+                        Assert.Equal("/api/sdk/contracts", path);
 
                         state.Contracts[contract.Slug] = contract;
 
                         Interlocked.Increment(ref state.Posts);
 
-                        context.Response.StatusCode = StatusCodes.Status204NoContent;
+                        context.Response.StatusCode = StatusCodes.Status201Created;
+
+                        await context.Response.WriteAsJsonAsync(contract);
 
                         return;
                     }

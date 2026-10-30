@@ -249,10 +249,13 @@ public sealed class ContractDeliveryServiceTests
 
         fixture.Client
             .Setup(client => client.PublishContractAsync(It.IsAny<PublishedContract>(), default))
-            .Returns(async () =>
+            .Returns(async (PublishedContract contract, CancellationToken _) =>
             {
                 entered.TrySetResult();
+
                 await release.Task;
+
+                return contract;
             });
 
         // Act
@@ -662,13 +665,13 @@ public sealed class ContractDeliveryServiceTests
 
         fixture.Client
             .Setup(client => client.PublishContractAsync(It.IsAny<PublishedContract>(), default))
-            .Returns(() =>
+            .Returns((PublishedContract contract, CancellationToken _) =>
             {
                 // Core принял контракт, но сохранение подтверждения упадёт.
                 File.Move(path, path + ".saved");
                 Directory.CreateDirectory(path);
 
-                return Task.CompletedTask;
+                return Task.FromResult(contract);
             });
 
         // Act
@@ -791,5 +794,104 @@ public sealed class ContractDeliveryServiceTests
     
         fixture.Client.Verify(client => 
             client.PublishContractAsync(It.IsAny<PublishedContract>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+    
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RunOnceAsync_WhenCoreAssignsDifferentVersion_PersistsItAcrossRestart(bool localFailure)
+    {
+        // Arrange
+        using var fixture = new MicroDbFixture();
+    
+        fixture.Client
+            .Setup(client => client.GetContractAsync("products", default))
+            .ReturnsAsync(CreateContract(version: 1));
+    
+        fixture.Client
+            .Setup(client => 
+                client.PublishContractAsync(It.IsAny<PublishedContract>(), default))
+            .ReturnsAsync((PublishedContract contract, CancellationToken _) =>
+                new PublishedContract
+                {
+                    Slug = contract.Slug,
+                    Rules = contract.Rules,
+                    ContractVersion = 12
+                });
+    
+        var store = new Mock<IContractStore>();
+    
+        store
+            .Setup(value => 
+                value.SetAsync(It.IsAny<PublishedContract>(), default))
+            .ThrowsAsync(new IOException("Unavailable"));
+    
+        using (var first = new ContractPublicationFixture(fixture, localFailure ? store.Object : null))
+        {
+            await first.SeedAsync(version: 2);
+    
+            // Act
+            await first.Delivery.RunOnceAsync(default);
+    
+            // Assert
+            Assert.Equal(12, first.Session.Context.ScannedContracts.Find("products")!.TargetVersion);
+    
+            fixture.Client.Verify(client => 
+                client.PublishContractAsync(It.Is<PublishedContract>(contract => 
+                    contract.ContractVersion == 2), default), Times.Once);
+        }
+    
+        // Arrange: повторно открываем ту же базу.
+        fixture.Clock.Advance(TimeSpan.FromSeconds(1));
+        fixture.Client.Invocations.Clear();
+    
+        using var reopened = new ContractPublicationFixture(fixture);
+    
+        // Act
+        await reopened.Delivery.RunOnceAsync(default);
+    
+        // Assert: подтверждённая версия восстановлена без повторного HTTP-запроса.
+        fixture.Client.VerifyNoOtherCalls();
+    
+        Assert.Equal(12, reopened.Session.Contracts.Get("products")!.ContractVersion);
+        Assert.Empty(reopened.Session.Context.ContractRetries);
+    }
+    
+    [Fact]
+    public async Task RunOnceAsync_WhenPublishedRulesDiffer_DoesNotConfirmContract()
+    {
+        // Arrange
+        using var fixture = new MicroDbFixture();
+        using var delivery = new ContractPublicationFixture(fixture);
+
+        await delivery.SeedAsync();
+
+        // SeedAsync сохраняет пустые правила.
+        // CreateContract возвращает контракт с правилом id.
+        fixture.Client
+            .Setup(client => 
+                client.PublishContractAsync(It.IsAny<PublishedContract>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateContract(version: 12));
+
+        // Act
+        await delivery.Delivery.RunOnceAsync(default);
+
+        // Assert
+        Assert.Null(delivery.Session.Contracts.Get("products"));
+
+        var scanned = delivery.Session.Context.ScannedContracts.Find("products")!;
+
+        Assert.True(scanned.Pending);
+        Assert.Equal(1, scanned.TargetVersion);
+
+        var retry = delivery.Session.Context.ContractRetries.Find("products")!;
+
+        Assert.Equal(ScanningStage.Publication, retry.Stage);
+        Assert.Equal(1, retry.FailedAttempts);
+        Assert.Null(retry.NextAttemptAt);
+        Assert.Equal("Core returned different rules after publication.", retry.LastError);
+
+        fixture.Client.Verify(client => 
+            client.PublishContractAsync(It.IsAny<PublishedContract>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
