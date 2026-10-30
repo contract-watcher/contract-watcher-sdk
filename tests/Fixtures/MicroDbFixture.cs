@@ -1,3 +1,4 @@
+using ContractWatcher.Common.Contracts;
 using ContractWatcher.MicroDb.Options;
 using ContractWatcher.SDK.Contracts.Stores;
 using ContractWatcher.SDK.Core.Interfaces;
@@ -28,6 +29,14 @@ public sealed class MicroDbFixture : IDisposable
     public Mock<IContractWatcherCoreClient> Client { get; } = new();
 
     internal MicroDbSession Open(int maxAttempts = 0) => new(this, maxAttempts);
+    
+    public MicroDbFixture()
+    {
+        Client
+            .Setup(client => 
+                client.PublishContractAsync(It.IsAny<PublishedContract>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PublishedContract contract, CancellationToken _) => contract);
+    }
 
     public void Dispose()
     {

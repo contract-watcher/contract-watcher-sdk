@@ -14,6 +14,5 @@ public interface IContractScanner
     /// Однократный автоматический запуск обеспечивает startup worker.
     /// Явный повторный вызов этого метода запускает новый проход.
     /// </remarks>
-    Task<IReadOnlyCollection<PublishedContract>> ScanAsync(
-        CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<PublishedContract>> ScanAsync(CancellationToken cancellationToken = default);
 }

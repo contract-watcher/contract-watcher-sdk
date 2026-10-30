@@ -33,4 +33,14 @@ public sealed class ContractWatcherOptions
     {
         DirectoryPath = Path.Combine(AppContext.BaseDirectory, "data", "contract-watcher")
     };
+    
+    /// <summary>
+    /// Таймаут одного HTTP-запроса к Core.
+    /// </summary>
+    public TimeSpan CoreRequestTimeout { get; set; } = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// Максимальный размер буферизуемого ответа Core в байтах.
+    /// </summary>
+    public long MaxCoreResponseBytes { get; set; } = 1024 * 1024;
 }

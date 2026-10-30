@@ -57,6 +57,19 @@ internal sealed class ScannedContractEntity : TrackedEntity
         get;
         set => SetValue(ref field, value);
     }
+    
+    /// <summary>
+    /// Идентификатор редакции отсканированных правил.
+    /// </summary>
+    /// <remarks>
+    /// Позволяет отличить актуальную операцию публикации
+    /// от retry-записи предыдущей редакции.
+    /// </remarks>
+    public Guid Revision
+    {
+        get;
+        set => SetValue(ref field, value);
+    }
 
     /// <summary>
     /// Желаемые правила.

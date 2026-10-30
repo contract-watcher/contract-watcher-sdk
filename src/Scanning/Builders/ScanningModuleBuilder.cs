@@ -1,5 +1,12 @@
+using ContractWatcher.SDK.Contracts.Models;
+using ContractWatcher.SDK.Contracts.Options;
+using ContractWatcher.SDK.Contracts.Policies;
+using ContractWatcher.SDK.Contracts.Services;
+using ContractWatcher.SDK.Contracts.Stores;
+using ContractWatcher.SDK.Contracts.Workers;
 using ContractWatcher.SDK.Data.Extensions;
 using ContractWatcher.SDK.Scanning.Interfaces;
+using ContractWatcher.SDK.Scanning.Models;
 using ContractWatcher.SDK.Scanning.Modules;
 using ContractWatcher.SDK.Scanning.Options;
 using Microsoft.Extensions.DependencyInjection;
@@ -143,6 +150,7 @@ public sealed class ScanningModuleBuilder
     public ScanningModuleBuilder AddPersistence()
     {
         Services.AddContractWatcherPersistence();
+        Services.TryAddSingleton<ContractDeliveryGate>();
 
         return AddModule<ContractPersistenceModule>();
     }
@@ -153,4 +161,51 @@ public sealed class ScanningModuleBuilder
     /// </summary>
     public ScanningModuleBuilder UsePersistence<TModule>() where TModule : class, IScanningModule =>
         ReplaceModule<ContractPersistenceModule, TModule>();
+    
+    /// <summary>
+    /// Добавляет первоначальную публикацию и фоновую доставку
+    /// сохранённых контрактов.
+    /// </summary>
+    /// <param name="configure">
+    /// Настройка лимита попыток, задержек и размера партии.
+    /// </param>
+    /// <remarks>
+    /// Модуль должен находиться после persistence.
+    /// Публикация выполняется только при предпочтении Application.
+    /// </remarks>
+    public ScanningModuleBuilder AddPublication(Action<ContractPublicationOptions>? configure = null)
+    {
+        Services.AddContractWatcherPersistence();
+
+        var options = Services
+            .AddOptions<ContractPublicationOptions>()
+            .Validate(value =>
+                value.MaxAttempts >= 0 && value.BatchSize > 0,
+            "Invalid publication attempt or batch limit.")
+            .Validate(value =>
+                value.InitialDelay > TimeSpan.Zero &&
+                value.MaxDelay >= value.InitialDelay &&
+                value.MaxDelay <= TimeSpan.FromDays(1) &&
+                value.PollInterval > TimeSpan.Zero &&
+                value.PollInterval <= TimeSpan.FromDays(1),
+            "Invalid publication retry intervals.")
+            .ValidateOnStart();
+
+        if (configure is not null)
+            options.Configure(configure);
+
+        Services.TryAddSingleton(TimeProvider.System);
+        Services.TryAddSingleton<ScanningCompletion>();
+        Services.TryAddSingleton<ContractDeliveryGate>();
+
+        Services.TryAddSingleton<ContractPublicationRetryPolicy>();
+        Services.TryAddSingleton<ContractDeliveryStore>();
+
+        Services.TryAddScoped<ContractDeliveryProcessor>();
+        Services.TryAddSingleton<ContractDeliveryService>();
+
+        Services.AddHostedService<ContractPublicationWorker>();
+
+        return AddModule<ContractPublicationModule>();
+    }
 }

@@ -85,4 +85,65 @@ public class ContractWatcherCoreClient(HttpClient httpClient) : IContractWatcher
                 exception);
         }
     }
+    
+    /// <summary>
+    /// Публикует правила контракта и получает опубликованную версию из Core.
+    /// </summary>
+    /// <param name="contract">Контракт с правилами, подготовленными SDK.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    /// <returns>Контракт с окончательной версией, назначенной Core.</returns>
+    public async Task<PublishedContract> PublishContractAsync(
+        PublishedContract contract, CancellationToken cancellationToken = default)
+    {
+        if (contract is null)
+            throw new ArgumentNullException(nameof(contract));
+    
+        if (string.IsNullOrWhiteSpace(contract.Slug))
+            throw new ArgumentException("Contract slug is required.", nameof(contract));
+        
+        if (contract.ContractVersion <= 0) 
+            throw new ArgumentOutOfRangeException(nameof(contract), "Contract version must be positive.");
+    
+        using var request = new HttpRequestMessage(HttpMethod.Post, CoreRoutes.Contracts)
+            { Content = JsonContent.Create(contract) };
+    
+        using var response = await SendAsync(request, cancellationToken)
+            .ConfigureAwait(false);
+    
+        if (response.StatusCode is not HttpStatusCode.OK and not HttpStatusCode.Created)
+        {
+            throw new CoreRequestException(
+                CoreRequestError.UnexpectedResponse,
+                "Core did not return a published contract.",
+                response.StatusCode);
+        }
+    
+        PublishedContract? published;
+    
+        try
+        {
+            published = await response.Content
+                .ReadFromJsonAsync<PublishedContract>(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (System.Text.Json.JsonException exception)
+        {
+            throw new CoreRequestException(
+                CoreRequestError.UnexpectedResponse,
+                "Core returned an invalid published contract.",
+                response.StatusCode, exception);
+        }
+    
+        if (published is null ||
+            !StringComparer.Ordinal.Equals(published.Slug, contract.Slug) ||
+            published.ContractVersion <= 0 || published.Rules is null)
+        {
+            throw new CoreRequestException(
+                CoreRequestError.UnexpectedResponse,
+                "Core returned an incompatible published contract.",
+                response.StatusCode);
+        }
+    
+        return published;
+    }
 }
